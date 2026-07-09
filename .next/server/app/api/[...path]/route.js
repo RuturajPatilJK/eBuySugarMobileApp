@@ -1,0 +1,122 @@
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+(() => {
+var exports = {};
+exports.id = "app/api/[...path]/route";
+exports.ids = ["app/api/[...path]/route"];
+exports.modules = {
+
+/***/ "(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2F%5B...path%5D%2Froute&page=%2Fapi%2F%5B...path%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2F%5B...path%5D%2Froute.js&appDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!":
+/*!*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2F%5B...path%5D%2Froute&page=%2Fapi%2F%5B...path%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2F%5B...path%5D%2Froute.js&appDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D! ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   patchFetch: () => (/* binding */ patchFetch),\n/* harmony export */   routeModule: () => (/* binding */ routeModule),\n/* harmony export */   serverHooks: () => (/* binding */ serverHooks),\n/* harmony export */   workAsyncStorage: () => (/* binding */ workAsyncStorage),\n/* harmony export */   workUnitAsyncStorage: () => (/* binding */ workUnitAsyncStorage)\n/* harmony export */ });\n/* harmony import */ var next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! next/dist/server/route-modules/app-route/module.compiled */ \"(rsc)/./node_modules/next/dist/server/route-modules/app-route/module.compiled.js\");\n/* harmony import */ var next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var next_dist_server_route_kind__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! next/dist/server/route-kind */ \"(rsc)/./node_modules/next/dist/server/route-kind.js\");\n/* harmony import */ var next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! next/dist/server/lib/patch-fetch */ \"(rsc)/./node_modules/next/dist/server/lib/patch-fetch.js\");\n/* harmony import */ var next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2__);\n/* harmony import */ var F_JKIndiaeAgritech2025_26_eBuySugar_eBuySugarMobile_nextjs_src_app_api_path_route_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./src/app/api/[...path]/route.js */ \"(rsc)/./src/app/api/[...path]/route.js\");\n\n\n\n\n// We inject the nextConfigOutput here so that we can use them in the route\n// module.\nconst nextConfigOutput = \"\"\nconst routeModule = new next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0__.AppRouteRouteModule({\n    definition: {\n        kind: next_dist_server_route_kind__WEBPACK_IMPORTED_MODULE_1__.RouteKind.APP_ROUTE,\n        page: \"/api/[...path]/route\",\n        pathname: \"/api/[...path]\",\n        filename: \"route\",\n        bundlePath: \"app/api/[...path]/route\"\n    },\n    resolvedPagePath: \"F:\\\\JKIndiaeAgritech2025-26\\\\eBuySugar\\\\eBuySugarMobile\\\\nextjs\\\\src\\\\app\\\\api\\\\[...path]\\\\route.js\",\n    nextConfigOutput,\n    userland: F_JKIndiaeAgritech2025_26_eBuySugar_eBuySugarMobile_nextjs_src_app_api_path_route_js__WEBPACK_IMPORTED_MODULE_3__\n});\n// Pull out the exports that we need to expose from the module. This should\n// be eliminated when we've moved the other routes to the new format. These\n// are used to hook into the route.\nconst { workAsyncStorage, workUnitAsyncStorage, serverHooks } = routeModule;\nfunction patchFetch() {\n    return (0,next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2__.patchFetch)({\n        workAsyncStorage,\n        workUnitAsyncStorage\n    });\n}\n\n\n//# sourceMappingURL=app-route.js.map//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHJzYykvLi9ub2RlX21vZHVsZXMvbmV4dC9kaXN0L2J1aWxkL3dlYnBhY2svbG9hZGVycy9uZXh0LWFwcC1sb2FkZXIvaW5kZXguanM/bmFtZT1hcHAlMkZhcGklMkYlNUIuLi5wYXRoJTVEJTJGcm91dGUmcGFnZT0lMkZhcGklMkYlNUIuLi5wYXRoJTVEJTJGcm91dGUmYXBwUGF0aHM9JnBhZ2VQYXRoPXByaXZhdGUtbmV4dC1hcHAtZGlyJTJGYXBpJTJGJTVCLi4ucGF0aCU1RCUyRnJvdXRlLmpzJmFwcERpcj1GJTNBJTVDSktJbmRpYWVBZ3JpdGVjaDIwMjUtMjYlNUNlQnV5U3VnYXIlNUNlQnV5U3VnYXJNb2JpbGUlNUNuZXh0anMlNUNzcmMlNUNhcHAmcGFnZUV4dGVuc2lvbnM9dHN4JnBhZ2VFeHRlbnNpb25zPXRzJnBhZ2VFeHRlbnNpb25zPWpzeCZwYWdlRXh0ZW5zaW9ucz1qcyZyb290RGlyPUYlM0ElNUNKS0luZGlhZUFncml0ZWNoMjAyNS0yNiU1Q2VCdXlTdWdhciU1Q2VCdXlTdWdhck1vYmlsZSU1Q25leHRqcyZpc0Rldj10cnVlJnRzY29uZmlnUGF0aD10c2NvbmZpZy5qc29uJmJhc2VQYXRoPSZhc3NldFByZWZpeD0mbmV4dENvbmZpZ091dHB1dD0mcHJlZmVycmVkUmVnaW9uPSZtaWRkbGV3YXJlQ29uZmlnPWUzMCUzRCEiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7QUFBK0Y7QUFDdkM7QUFDcUI7QUFDbUQ7QUFDaEk7QUFDQTtBQUNBO0FBQ0Esd0JBQXdCLHlHQUFtQjtBQUMzQztBQUNBLGNBQWMsa0VBQVM7QUFDdkI7QUFDQTtBQUNBO0FBQ0E7QUFDQSxLQUFLO0FBQ0w7QUFDQTtBQUNBLFlBQVk7QUFDWixDQUFDO0FBQ0Q7QUFDQTtBQUNBO0FBQ0EsUUFBUSxzREFBc0Q7QUFDOUQ7QUFDQSxXQUFXLDRFQUFXO0FBQ3RCO0FBQ0E7QUFDQSxLQUFLO0FBQ0w7QUFDMEY7O0FBRTFGIiwic291cmNlcyI6WyIiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgQXBwUm91dGVSb3V0ZU1vZHVsZSB9IGZyb20gXCJuZXh0L2Rpc3Qvc2VydmVyL3JvdXRlLW1vZHVsZXMvYXBwLXJvdXRlL21vZHVsZS5jb21waWxlZFwiO1xuaW1wb3J0IHsgUm91dGVLaW5kIH0gZnJvbSBcIm5leHQvZGlzdC9zZXJ2ZXIvcm91dGUta2luZFwiO1xuaW1wb3J0IHsgcGF0Y2hGZXRjaCBhcyBfcGF0Y2hGZXRjaCB9IGZyb20gXCJuZXh0L2Rpc3Qvc2VydmVyL2xpYi9wYXRjaC1mZXRjaFwiO1xuaW1wb3J0ICogYXMgdXNlcmxhbmQgZnJvbSBcIkY6XFxcXEpLSW5kaWFlQWdyaXRlY2gyMDI1LTI2XFxcXGVCdXlTdWdhclxcXFxlQnV5U3VnYXJNb2JpbGVcXFxcbmV4dGpzXFxcXHNyY1xcXFxhcHBcXFxcYXBpXFxcXFsuLi5wYXRoXVxcXFxyb3V0ZS5qc1wiO1xuLy8gV2UgaW5qZWN0IHRoZSBuZXh0Q29uZmlnT3V0cHV0IGhlcmUgc28gdGhhdCB3ZSBjYW4gdXNlIHRoZW0gaW4gdGhlIHJvdXRlXG4vLyBtb2R1bGUuXG5jb25zdCBuZXh0Q29uZmlnT3V0cHV0ID0gXCJcIlxuY29uc3Qgcm91dGVNb2R1bGUgPSBuZXcgQXBwUm91dGVSb3V0ZU1vZHVsZSh7XG4gICAgZGVmaW5pdGlvbjoge1xuICAgICAgICBraW5kOiBSb3V0ZUtpbmQuQVBQX1JPVVRFLFxuICAgICAgICBwYWdlOiBcIi9hcGkvWy4uLnBhdGhdL3JvdXRlXCIsXG4gICAgICAgIHBhdGhuYW1lOiBcIi9hcGkvWy4uLnBhdGhdXCIsXG4gICAgICAgIGZpbGVuYW1lOiBcInJvdXRlXCIsXG4gICAgICAgIGJ1bmRsZVBhdGg6IFwiYXBwL2FwaS9bLi4ucGF0aF0vcm91dGVcIlxuICAgIH0sXG4gICAgcmVzb2x2ZWRQYWdlUGF0aDogXCJGOlxcXFxKS0luZGlhZUFncml0ZWNoMjAyNS0yNlxcXFxlQnV5U3VnYXJcXFxcZUJ1eVN1Z2FyTW9iaWxlXFxcXG5leHRqc1xcXFxzcmNcXFxcYXBwXFxcXGFwaVxcXFxbLi4ucGF0aF1cXFxccm91dGUuanNcIixcbiAgICBuZXh0Q29uZmlnT3V0cHV0LFxuICAgIHVzZXJsYW5kXG59KTtcbi8vIFB1bGwgb3V0IHRoZSBleHBvcnRzIHRoYXQgd2UgbmVlZCB0byBleHBvc2UgZnJvbSB0aGUgbW9kdWxlLiBUaGlzIHNob3VsZFxuLy8gYmUgZWxpbWluYXRlZCB3aGVuIHdlJ3ZlIG1vdmVkIHRoZSBvdGhlciByb3V0ZXMgdG8gdGhlIG5ldyBmb3JtYXQuIFRoZXNlXG4vLyBhcmUgdXNlZCB0byBob29rIGludG8gdGhlIHJvdXRlLlxuY29uc3QgeyB3b3JrQXN5bmNTdG9yYWdlLCB3b3JrVW5pdEFzeW5jU3RvcmFnZSwgc2VydmVySG9va3MgfSA9IHJvdXRlTW9kdWxlO1xuZnVuY3Rpb24gcGF0Y2hGZXRjaCgpIHtcbiAgICByZXR1cm4gX3BhdGNoRmV0Y2goe1xuICAgICAgICB3b3JrQXN5bmNTdG9yYWdlLFxuICAgICAgICB3b3JrVW5pdEFzeW5jU3RvcmFnZVxuICAgIH0pO1xufVxuZXhwb3J0IHsgcm91dGVNb2R1bGUsIHdvcmtBc3luY1N0b3JhZ2UsIHdvcmtVbml0QXN5bmNTdG9yYWdlLCBzZXJ2ZXJIb29rcywgcGF0Y2hGZXRjaCwgIH07XG5cbi8vIyBzb3VyY2VNYXBwaW5nVVJMPWFwcC1yb3V0ZS5qcy5tYXAiXSwibmFtZXMiOltdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2F%5B...path%5D%2Froute&page=%2Fapi%2F%5B...path%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2F%5B...path%5D%2Froute.js&appDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!\n");
+
+/***/ }),
+
+/***/ "(rsc)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true!":
+/*!******************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true! ***!
+  \******************************************************************************************************/
+/***/ (() => {
+
+
+
+/***/ }),
+
+/***/ "(rsc)/./src/app/api/[...path]/route.js":
+/*!****************************************!*\
+  !*** ./src/app/api/[...path]/route.js ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   DELETE: () => (/* binding */ DELETE),\n/* harmony export */   GET: () => (/* binding */ GET),\n/* harmony export */   HEAD: () => (/* binding */ HEAD),\n/* harmony export */   OPTIONS: () => (/* binding */ OPTIONS),\n/* harmony export */   PATCH: () => (/* binding */ PATCH),\n/* harmony export */   POST: () => (/* binding */ POST),\n/* harmony export */   PUT: () => (/* binding */ PUT)\n/* harmony export */ });\n/* harmony import */ var next_server__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! next/server */ \"(rsc)/./node_modules/next/dist/api/server.js\");\n\nconst BACKEND = 'https://trading-api.ebuysugar.com';\n// Headers that must not be forwarded to the upstream server\nconst HOP_BY_HOP = new Set([\n    'connection',\n    'keep-alive',\n    'transfer-encoding',\n    'te',\n    'trailer',\n    'upgrade',\n    'proxy-authorization',\n    'proxy-authenticate',\n    'host'\n]);\nasync function proxy(request, context) {\n    const { path } = await context.params;\n    const { search } = new URL(request.url);\n    const upstream = `${BACKEND}/${path.join('/')}${search}`;\n    // Forward browser headers, skipping hop-by-hop\n    const forwardHeaders = {};\n    request.headers.forEach((v, k)=>{\n        if (!HOP_BY_HOP.has(k.toLowerCase())) {\n            forwardHeaders[k] = v;\n        }\n    });\n    // Read body for mutation methods\n    let body = undefined;\n    if (![\n        'GET',\n        'HEAD',\n        'OPTIONS'\n    ].includes(request.method)) {\n        const buf = await request.arrayBuffer();\n        if (buf.byteLength > 0) body = buf;\n    }\n    // Fetch upstream — redirect: 'follow' prevents CORS from browser-followed redirects\n    const res = await fetch(upstream, {\n        method: request.method,\n        headers: forwardHeaders,\n        body,\n        redirect: 'follow'\n    });\n    // Rewrite Set-Cookie: strip Domain + Secure so cookies work on localhost\n    const resHeaders = new Headers();\n    const isDev = \"development\" === 'development';\n    const setCookies = typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : [];\n    res.headers.forEach((v, k)=>{\n        const lower = k.toLowerCase();\n        if (HOP_BY_HOP.has(lower)) return;\n        if (lower === 'set-cookie') {\n            // handled separately below via getSetCookie()\n            return;\n        }\n        resHeaders.set(k, v);\n    });\n    for (const cookie of setCookies){\n        const cleaned = isDev ? cookie.replace(/;\\s*domain=[^;]*/gi, '').replace(/;\\s*secure\\b/gi, '') : cookie;\n        resHeaders.append('set-cookie', cleaned);\n    }\n    return new next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse(res.body, {\n        status: res.status,\n        statusText: res.statusText,\n        headers: resHeaders\n    });\n}\nconst GET = proxy;\nconst POST = proxy;\nconst PUT = proxy;\nconst PATCH = proxy;\nconst DELETE = proxy;\nconst OPTIONS = proxy;\nconst HEAD = proxy;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHJzYykvLi9zcmMvYXBwL2FwaS9bLi4ucGF0aF0vcm91dGUuanMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7QUFBMkM7QUFFM0MsTUFBTUMsVUFBVTtBQUVoQiw0REFBNEQ7QUFDNUQsTUFBTUMsYUFBYSxJQUFJQyxJQUFJO0lBQ3ZCO0lBQWM7SUFBYztJQUFxQjtJQUNqRDtJQUFXO0lBQVc7SUFBdUI7SUFDN0M7Q0FDSDtBQUVELGVBQWVDLE1BQU1DLE9BQU8sRUFBRUMsT0FBTztJQUNqQyxNQUFNLEVBQUVDLElBQUksRUFBRSxHQUFHLE1BQU1ELFFBQVFFLE1BQU07SUFDckMsTUFBTSxFQUFFQyxNQUFNLEVBQUUsR0FBRyxJQUFJQyxJQUFJTCxRQUFRTSxHQUFHO0lBQ3RDLE1BQU1DLFdBQVcsR0FBR1gsUUFBUSxDQUFDLEVBQUVNLEtBQUtNLElBQUksQ0FBQyxPQUFPSixRQUFRO0lBRXhELCtDQUErQztJQUMvQyxNQUFNSyxpQkFBaUIsQ0FBQztJQUN4QlQsUUFBUVUsT0FBTyxDQUFDQyxPQUFPLENBQUMsQ0FBQ0MsR0FBR0M7UUFDeEIsSUFBSSxDQUFDaEIsV0FBV2lCLEdBQUcsQ0FBQ0QsRUFBRUUsV0FBVyxLQUFLO1lBQ2xDTixjQUFjLENBQUNJLEVBQUUsR0FBR0Q7UUFDeEI7SUFDSjtJQUVBLGlDQUFpQztJQUNqQyxJQUFJSSxPQUFPQztJQUNYLElBQUksQ0FBQztRQUFDO1FBQU87UUFBUTtLQUFVLENBQUNDLFFBQVEsQ0FBQ2xCLFFBQVFtQixNQUFNLEdBQUc7UUFDdEQsTUFBTUMsTUFBTSxNQUFNcEIsUUFBUXFCLFdBQVc7UUFDckMsSUFBSUQsSUFBSUUsVUFBVSxHQUFHLEdBQUdOLE9BQU9JO0lBQ25DO0lBRUEsb0ZBQW9GO0lBQ3BGLE1BQU1HLE1BQU0sTUFBTUMsTUFBTWpCLFVBQVU7UUFDOUJZLFFBQVFuQixRQUFRbUIsTUFBTTtRQUN0QlQsU0FBU0Q7UUFDVE87UUFDQVMsVUFBVTtJQUNkO0lBRUEseUVBQXlFO0lBQ3pFLE1BQU1DLGFBQWEsSUFBSUM7SUFDdkIsTUFBTUMsUUFBUUMsa0JBQXlCO0lBRXZDLE1BQU1DLGFBQWEsT0FBT1AsSUFBSWIsT0FBTyxDQUFDcUIsWUFBWSxLQUFLLGFBQ2pEUixJQUFJYixPQUFPLENBQUNxQixZQUFZLEtBQ3hCLEVBQUU7SUFFUlIsSUFBSWIsT0FBTyxDQUFDQyxPQUFPLENBQUMsQ0FBQ0MsR0FBR0M7UUFDcEIsTUFBTW1CLFFBQVFuQixFQUFFRSxXQUFXO1FBQzNCLElBQUlsQixXQUFXaUIsR0FBRyxDQUFDa0IsUUFBUTtRQUMzQixJQUFJQSxVQUFVLGNBQWM7WUFDeEIsOENBQThDO1lBQzlDO1FBQ0o7UUFDQU4sV0FBV08sR0FBRyxDQUFDcEIsR0FBR0Q7SUFDdEI7SUFFQSxLQUFLLE1BQU1zQixVQUFVSixXQUFZO1FBQzdCLE1BQU1LLFVBQVVQLFFBQ1ZNLE9BQU9FLE9BQU8sQ0FBQyxzQkFBc0IsSUFBSUEsT0FBTyxDQUFDLGtCQUFrQixNQUNuRUY7UUFDTlIsV0FBV1csTUFBTSxDQUFDLGNBQWNGO0lBQ3BDO0lBRUEsT0FBTyxJQUFJeEMscURBQVlBLENBQUM0QixJQUFJUCxJQUFJLEVBQUU7UUFDOUJzQixRQUFRZixJQUFJZSxNQUFNO1FBQ2xCQyxZQUFZaEIsSUFBSWdCLFVBQVU7UUFDMUI3QixTQUFTZ0I7SUFDYjtBQUNKO0FBRU8sTUFBTWMsTUFBVXpDLE1BQU07QUFDdEIsTUFBTTBDLE9BQVUxQyxNQUFNO0FBQ3RCLE1BQU0yQyxNQUFVM0MsTUFBTTtBQUN0QixNQUFNNEMsUUFBVTVDLE1BQU07QUFDdEIsTUFBTTZDLFNBQVU3QyxNQUFNO0FBQ3RCLE1BQU04QyxVQUFVOUMsTUFBTTtBQUN0QixNQUFNK0MsT0FBVS9DLE1BQU0iLCJzb3VyY2VzIjpbIkY6XFxKS0luZGlhZUFncml0ZWNoMjAyNS0yNlxcZUJ1eVN1Z2FyXFxlQnV5U3VnYXJNb2JpbGVcXG5leHRqc1xcc3JjXFxhcHBcXGFwaVxcWy4uLnBhdGhdXFxyb3V0ZS5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBOZXh0UmVzcG9uc2UgfSBmcm9tICduZXh0L3NlcnZlcic7XG5cbmNvbnN0IEJBQ0tFTkQgPSAnaHR0cHM6Ly90cmFkaW5nLWFwaS5lYnV5c3VnYXIuY29tJztcblxuLy8gSGVhZGVycyB0aGF0IG11c3Qgbm90IGJlIGZvcndhcmRlZCB0byB0aGUgdXBzdHJlYW0gc2VydmVyXG5jb25zdCBIT1BfQllfSE9QID0gbmV3IFNldChbXG4gICAgJ2Nvbm5lY3Rpb24nLCAna2VlcC1hbGl2ZScsICd0cmFuc2Zlci1lbmNvZGluZycsICd0ZScsXG4gICAgJ3RyYWlsZXInLCAndXBncmFkZScsICdwcm94eS1hdXRob3JpemF0aW9uJywgJ3Byb3h5LWF1dGhlbnRpY2F0ZScsXG4gICAgJ2hvc3QnLFxuXSk7XG5cbmFzeW5jIGZ1bmN0aW9uIHByb3h5KHJlcXVlc3QsIGNvbnRleHQpIHtcbiAgICBjb25zdCB7IHBhdGggfSA9IGF3YWl0IGNvbnRleHQucGFyYW1zO1xuICAgIGNvbnN0IHsgc2VhcmNoIH0gPSBuZXcgVVJMKHJlcXVlc3QudXJsKTtcbiAgICBjb25zdCB1cHN0cmVhbSA9IGAke0JBQ0tFTkR9LyR7cGF0aC5qb2luKCcvJyl9JHtzZWFyY2h9YDtcblxuICAgIC8vIEZvcndhcmQgYnJvd3NlciBoZWFkZXJzLCBza2lwcGluZyBob3AtYnktaG9wXG4gICAgY29uc3QgZm9yd2FyZEhlYWRlcnMgPSB7fTtcbiAgICByZXF1ZXN0LmhlYWRlcnMuZm9yRWFjaCgodiwgaykgPT4ge1xuICAgICAgICBpZiAoIUhPUF9CWV9IT1AuaGFzKGsudG9Mb3dlckNhc2UoKSkpIHtcbiAgICAgICAgICAgIGZvcndhcmRIZWFkZXJzW2tdID0gdjtcbiAgICAgICAgfVxuICAgIH0pO1xuXG4gICAgLy8gUmVhZCBib2R5IGZvciBtdXRhdGlvbiBtZXRob2RzXG4gICAgbGV0IGJvZHkgPSB1bmRlZmluZWQ7XG4gICAgaWYgKCFbJ0dFVCcsICdIRUFEJywgJ09QVElPTlMnXS5pbmNsdWRlcyhyZXF1ZXN0Lm1ldGhvZCkpIHtcbiAgICAgICAgY29uc3QgYnVmID0gYXdhaXQgcmVxdWVzdC5hcnJheUJ1ZmZlcigpO1xuICAgICAgICBpZiAoYnVmLmJ5dGVMZW5ndGggPiAwKSBib2R5ID0gYnVmO1xuICAgIH1cblxuICAgIC8vIEZldGNoIHVwc3RyZWFtIOKAlCByZWRpcmVjdDogJ2ZvbGxvdycgcHJldmVudHMgQ09SUyBmcm9tIGJyb3dzZXItZm9sbG93ZWQgcmVkaXJlY3RzXG4gICAgY29uc3QgcmVzID0gYXdhaXQgZmV0Y2godXBzdHJlYW0sIHtcbiAgICAgICAgbWV0aG9kOiByZXF1ZXN0Lm1ldGhvZCxcbiAgICAgICAgaGVhZGVyczogZm9yd2FyZEhlYWRlcnMsXG4gICAgICAgIGJvZHksXG4gICAgICAgIHJlZGlyZWN0OiAnZm9sbG93JyxcbiAgICB9KTtcblxuICAgIC8vIFJld3JpdGUgU2V0LUNvb2tpZTogc3RyaXAgRG9tYWluICsgU2VjdXJlIHNvIGNvb2tpZXMgd29yayBvbiBsb2NhbGhvc3RcbiAgICBjb25zdCByZXNIZWFkZXJzID0gbmV3IEhlYWRlcnMoKTtcbiAgICBjb25zdCBpc0RldiA9IHByb2Nlc3MuZW52Lk5PREVfRU5WID09PSAnZGV2ZWxvcG1lbnQnO1xuXG4gICAgY29uc3Qgc2V0Q29va2llcyA9IHR5cGVvZiByZXMuaGVhZGVycy5nZXRTZXRDb29raWUgPT09ICdmdW5jdGlvbidcbiAgICAgICAgPyByZXMuaGVhZGVycy5nZXRTZXRDb29raWUoKVxuICAgICAgICA6IFtdO1xuXG4gICAgcmVzLmhlYWRlcnMuZm9yRWFjaCgodiwgaykgPT4ge1xuICAgICAgICBjb25zdCBsb3dlciA9IGsudG9Mb3dlckNhc2UoKTtcbiAgICAgICAgaWYgKEhPUF9CWV9IT1AuaGFzKGxvd2VyKSkgcmV0dXJuO1xuICAgICAgICBpZiAobG93ZXIgPT09ICdzZXQtY29va2llJykge1xuICAgICAgICAgICAgLy8gaGFuZGxlZCBzZXBhcmF0ZWx5IGJlbG93IHZpYSBnZXRTZXRDb29raWUoKVxuICAgICAgICAgICAgcmV0dXJuO1xuICAgICAgICB9XG4gICAgICAgIHJlc0hlYWRlcnMuc2V0KGssIHYpO1xuICAgIH0pO1xuXG4gICAgZm9yIChjb25zdCBjb29raWUgb2Ygc2V0Q29va2llcykge1xuICAgICAgICBjb25zdCBjbGVhbmVkID0gaXNEZXZcbiAgICAgICAgICAgID8gY29va2llLnJlcGxhY2UoLztcXHMqZG9tYWluPVteO10qL2dpLCAnJykucmVwbGFjZSgvO1xccypzZWN1cmVcXGIvZ2ksICcnKVxuICAgICAgICAgICAgOiBjb29raWU7XG4gICAgICAgIHJlc0hlYWRlcnMuYXBwZW5kKCdzZXQtY29va2llJywgY2xlYW5lZCk7XG4gICAgfVxuXG4gICAgcmV0dXJuIG5ldyBOZXh0UmVzcG9uc2UocmVzLmJvZHksIHtcbiAgICAgICAgc3RhdHVzOiByZXMuc3RhdHVzLFxuICAgICAgICBzdGF0dXNUZXh0OiByZXMuc3RhdHVzVGV4dCxcbiAgICAgICAgaGVhZGVyczogcmVzSGVhZGVycyxcbiAgICB9KTtcbn1cblxuZXhwb3J0IGNvbnN0IEdFVCAgICAgPSBwcm94eTtcbmV4cG9ydCBjb25zdCBQT1NUICAgID0gcHJveHk7XG5leHBvcnQgY29uc3QgUFVUICAgICA9IHByb3h5O1xuZXhwb3J0IGNvbnN0IFBBVENIICAgPSBwcm94eTtcbmV4cG9ydCBjb25zdCBERUxFVEUgID0gcHJveHk7XG5leHBvcnQgY29uc3QgT1BUSU9OUyA9IHByb3h5O1xuZXhwb3J0IGNvbnN0IEhFQUQgICAgPSBwcm94eTtcbiJdLCJuYW1lcyI6WyJOZXh0UmVzcG9uc2UiLCJCQUNLRU5EIiwiSE9QX0JZX0hPUCIsIlNldCIsInByb3h5IiwicmVxdWVzdCIsImNvbnRleHQiLCJwYXRoIiwicGFyYW1zIiwic2VhcmNoIiwiVVJMIiwidXJsIiwidXBzdHJlYW0iLCJqb2luIiwiZm9yd2FyZEhlYWRlcnMiLCJoZWFkZXJzIiwiZm9yRWFjaCIsInYiLCJrIiwiaGFzIiwidG9Mb3dlckNhc2UiLCJib2R5IiwidW5kZWZpbmVkIiwiaW5jbHVkZXMiLCJtZXRob2QiLCJidWYiLCJhcnJheUJ1ZmZlciIsImJ5dGVMZW5ndGgiLCJyZXMiLCJmZXRjaCIsInJlZGlyZWN0IiwicmVzSGVhZGVycyIsIkhlYWRlcnMiLCJpc0RldiIsInByb2Nlc3MiLCJzZXRDb29raWVzIiwiZ2V0U2V0Q29va2llIiwibG93ZXIiLCJzZXQiLCJjb29raWUiLCJjbGVhbmVkIiwicmVwbGFjZSIsImFwcGVuZCIsInN0YXR1cyIsInN0YXR1c1RleHQiLCJHRVQiLCJQT1NUIiwiUFVUIiwiUEFUQ0giLCJERUxFVEUiLCJPUFRJT05TIiwiSEVBRCJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(rsc)/./src/app/api/[...path]/route.js\n");
+
+/***/ }),
+
+/***/ "(ssr)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true!":
+/*!******************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true! ***!
+  \******************************************************************************************************/
+/***/ (() => {
+
+
+
+/***/ }),
+
+/***/ "../app-render/after-task-async-storage.external":
+/*!***********************************************************************************!*\
+  !*** external "next/dist/server/app-render/after-task-async-storage.external.js" ***!
+  \***********************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/server/app-render/after-task-async-storage.external.js");
+
+/***/ }),
+
+/***/ "../app-render/work-async-storage.external":
+/*!*****************************************************************************!*\
+  !*** external "next/dist/server/app-render/work-async-storage.external.js" ***!
+  \*****************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/server/app-render/work-async-storage.external.js");
+
+/***/ }),
+
+/***/ "./work-unit-async-storage.external":
+/*!**********************************************************************************!*\
+  !*** external "next/dist/server/app-render/work-unit-async-storage.external.js" ***!
+  \**********************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/server/app-render/work-unit-async-storage.external.js");
+
+/***/ }),
+
+/***/ "next/dist/compiled/next-server/app-page.runtime.dev.js":
+/*!*************************************************************************!*\
+  !*** external "next/dist/compiled/next-server/app-page.runtime.dev.js" ***!
+  \*************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/compiled/next-server/app-page.runtime.dev.js");
+
+/***/ }),
+
+/***/ "next/dist/compiled/next-server/app-route.runtime.dev.js":
+/*!**************************************************************************!*\
+  !*** external "next/dist/compiled/next-server/app-route.runtime.dev.js" ***!
+  \**************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/compiled/next-server/app-route.runtime.dev.js");
+
+/***/ })
+
+};
+;
+
+// load runtime
+var __webpack_require__ = require("../../../webpack-runtime.js");
+__webpack_require__.C(exports);
+var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
+var __webpack_exports__ = __webpack_require__.X(0, ["vendor-chunks/next"], () => (__webpack_exec__("(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2F%5B...path%5D%2Froute&page=%2Fapi%2F%5B...path%5D%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2F%5B...path%5D%2Froute.js&appDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=F%3A%5CJKIndiaeAgritech2025-26%5CeBuySugar%5CeBuySugarMobile%5Cnextjs&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!")));
+module.exports = __webpack_exports__;
+
+})();

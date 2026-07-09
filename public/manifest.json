@@ -1,0 +1,12 @@
+{
+  "name": "eBuySugar — Sugar Trade Portal",
+  "short_name": "eBuySugar",
+  "description": "Registered sugar miller and trader platform for buying, selling, and tracking sugar tenders.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ef3837",
+  "orientation": "portrait",
+  "categories": ["business", "finance"],
+  "lang": "en-IN"
+}
