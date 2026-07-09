@@ -2,6 +2,9 @@
 node_modules/
 CLAUDE.md
 
+# Exclude Next.js build output
+.next/
+
 # Exclude logs and other generated files
 *.log
 *.lock

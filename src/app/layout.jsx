@@ -1,6 +1,7 @@
 import './globals.css';
 import Providers from '../components/providers/Providers';
 import AppInitializer from '../components/auth/AppInitializer';
+import SplashScreen from '../components/SplashScreen';
 
 export const metadata = {
     title: 'eBuySugar — Sugar Trade Portal',
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
             </head>
             <body suppressHydrationWarning>
                 <Providers>
+                    <SplashScreen />
                     <AppInitializer>
                         {children}
                     </AppInitializer>

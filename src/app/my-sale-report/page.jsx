@@ -1,40 +1,42 @@
 ﻿'use client';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import { useGetTodaysSalesQuery } from '../../services/todaysSaleApi';
 
-const today = new Date().toISOString().split('T')[0];
-const firstOfMonth = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })();
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayYmd = ymd(new Date());
 
 function fmtDate(s) {
     if (!s) return '—';
     const d = new Date(s);
     if (isNaN(d)) return s.slice(0, 10);
-    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+}
+function dmy(s) {
+    if (!s) return '—';
+    const [y,m,d] = s.split('-');
+    return `${d}-${m}-${y}`;
 }
 function fmtAmt(n) {
     return (parseFloat(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
 }
 
 const QUICK = [
-    { label: 'Today', f: today, t: today },
-    { label: 'Last 7D', f: (() => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0]; })(), t: today },
-    { label: 'This Month', f: firstOfMonth, t: today },
-    {
-        label: 'Last Month', f: (() => {
-            const d = new Date(); return new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().split('T')[0];
-        })(), t: (() => {
-            const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 0).toISOString().split('T')[0];
-        })(),
-    },
+    { label: 'Today',      get: () => ({ from: todayYmd, to: todayYmd }) },
+    { label: 'This Week',  get: () => { const d = new Date(); d.setDate(d.getDate()-d.getDay()); return { from: ymd(d), to: todayYmd }; } },
+    { label: 'This Month', get: () => { const n = new Date(); return { from: ymd(new Date(n.getFullYear(),n.getMonth(),1)), to: todayYmd }; } },
+    { label: 'Last Month', get: () => { const n = new Date(); return { from: ymd(new Date(n.getFullYear(),n.getMonth()-1,1)), to: ymd(new Date(n.getFullYear(),n.getMonth(),0)) }; } },
 ];
 
 export default function MySaleReportPage() {
-    const [fromDate, setFromDate] = useState(today);
-    const [toDate, setToDate] = useState(today);
-    const [applied, setApplied] = useState({ from_date: today, to_date: today });
+    const def = QUICK[0].get();
+    const [fromDate, setFromDate] = useState(def.from);
+    const [toDate, setToDate] = useState(def.to);
+    const [applied, setApplied] = useState({ from_date: def.from, to_date: def.to });
     const [activeQ, setActiveQ] = useState('Today');
+    const [showFilter, setShowFilter] = useState(false);
     const [expandedTender, setExpandedTender] = useState(null);
     const [search, setSearch] = useState('');
 
@@ -79,12 +81,63 @@ export default function MySaleReportPage() {
     const inputStyle = {
         padding: '10px 12px', background: '#f9fafb', border: '1.5px solid #e5e7eb',
         borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#111827',
-        outline: 'none', fontFamily: 'Signika, sans-serif', width: '100%',
+        outline: 'none', fontFamily: 'Signika, sans-serif', width: '100%', boxSizing: 'border-box',
     };
 
     return (
         <AppLayout title="My Sale Report" showBack>
             <div style={{ padding: '12px 16px 32px', fontFamily: 'Signika, ui-sans-serif, system-ui, sans-serif' }}>
+
+                {/* Section header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: '#111827' }}>My Sale Report</h2>
+                        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
+                            {activeQ ? `${activeQ} · ${dmy(applied.from_date)}${applied.from_date !== applied.to_date ? ` – ${dmy(applied.to_date)}` : ''}` : `${dmy(applied.from_date)} – ${dmy(applied.to_date)}`}
+                            {!isLoading && filteredGroups.length > 0 && ` · ${filteredGroups.length} tender${filteredGroups.length !== 1 ? 's' : ''}`}
+                        </p>
+                    </div>
+                    <button onClick={() => setShowFilter(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: showFilter ? '#2563eb' : 'white', border: `1.5px solid ${showFilter ? '#2563eb' : '#e5e7eb'}`, color: showFilter ? 'white' : '#374151', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent' }}>
+                        <SlidersHorizontal size={14} strokeWidth={2.5} /> Filter
+                    </button>
+                </div>
+
+                {/* Filter card */}
+                <AnimatePresence>
+                    {showFilter && (
+                        <motion.div key="filter" initial={{ opacity: 0, height: 0, marginBottom: 0 }} animate={{ opacity: 1, height: 'auto', marginBottom: 16 }} exit={{ opacity: 0, height: 0, marginBottom: 0 }} transition={{ duration: 0.22 }} style={{ overflow: 'hidden' }}>
+                            <div style={{ background: 'white', borderRadius: 16, padding: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', gap: 7, marginBottom: 14, flexWrap: 'wrap' }}>
+                                    {QUICK.map(q => (
+                                        <button key={q.label} onClick={() => { const r=q.get(); setFromDate(r.from); setToDate(r.to); setApplied({from_date:r.from,to_date:r.to}); setActiveQ(q.label); }} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: `1.5px solid ${activeQ===q.label?'#2563eb':'#e5e7eb'}`, background: activeQ===q.label?'#2563eb':'#f9fafb', color: activeQ===q.label?'white':'#6b7280', cursor: 'pointer', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent', boxShadow: activeQ===q.label?'0 3px 10px rgba(37,99,235,0.25)':'none' }}>
+                                            {q.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                                    {[{label:'From',val:fromDate,set:setFromDate},{label:'To',val:toDate,set:setToDate}].map(f=>(
+                                        <div key={f.label}>
+                                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>{f.label}</label>
+                                            <input type="date" value={f.val} onChange={e=>{f.set(e.target.value);setActiveQ(null);}} style={inputStyle} onFocus={e=>{e.target.style.borderColor='#2563eb';e.target.style.background='white';}} onBlur={e=>{e.target.style.borderColor='#e5e7eb';e.target.style.background='#f9fafb';}} />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ marginBottom: 12 }}>
+                                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Search Mill / Grade</label>
+                                    <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by mill, grade or tender #…" style={inputStyle} onFocus={e=>{e.target.style.borderColor='#2563eb';e.target.style.background='white';}} onBlur={e=>{e.target.style.borderColor='#e5e7eb';e.target.style.background='#f9fafb';}} />
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setApplied({ from_date: fromDate, to_date: toDate }); setShowFilter(false); }} style={{ flex: 1, padding: '12px', borderRadius: 12, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', border: 'none', fontSize: 13, fontWeight: 800, color: 'white', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(37,99,235,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                        {isFetching ? <><div style={{ width:14,height:14,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin 0.7s linear infinite' }} />Loading…</> : 'Apply Filter'}
+                                    </motion.button>
+                                    <button onClick={() => { const r=QUICK[0].get(); setFromDate(r.from); setToDate(r.to); setApplied({from_date:r.from,to_date:r.to}); setActiveQ('Today'); setSearch(''); }} style={{ width:44,height:44,borderRadius:12,flexShrink:0,background:'#f5f5f5',border:'1.5px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',WebkitTapHighlightColor:'transparent' }}>
+                                        <RotateCcw size={15} color="#6b7280" strokeWidth={2.2} />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Summary banner */}
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -101,40 +154,12 @@ export default function MySaleReportPage() {
                     </div>
                 </motion.div>
 
-                {/* Quick presets */}
-                <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
-                    {QUICK.map(q => (
-                        <button key={q.label}
-                            onClick={() => { setFromDate(q.f); setToDate(q.t); setApplied({ from_date: q.f, to_date: q.t }); setActiveQ(q.label); }}
-                            style={{ padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${activeQ === q.label ? '#2563eb' : '#e5e7eb'}`, background: activeQ === q.label ? '#eff6ff' : 'white', color: activeQ === q.label ? '#1d4ed8' : '#6b7280', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            {q.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Date filter */}
-                <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 14, border: '1px solid #f3f4f6', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>From</label>
-                            <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setActiveQ(null); }} style={inputStyle} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>To</label>
-                            <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setActiveQ(null); }} style={inputStyle} />
-                        </div>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setApplied({ from_date: fromDate, to_date: toDate }); }}
-                        style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 800, color: 'white', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        {isFetching ? <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />Loading…</> : 'Apply Filter'}
-                    </motion.button>
-                </div>
-
-                {/* Search */}
+                {/* Search standalone */}
                 <div style={{ position: 'relative', marginBottom: 14 }}>
                     <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                     <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by mill, grade or tender #…"
-                        style={{ ...inputStyle, paddingLeft: 34 }} />
+                        style={{ ...inputStyle, paddingLeft: 34 }}
+                        onFocus={e=>{e.target.style.borderColor='#2563eb';e.target.style.background='white';}} onBlur={e=>{e.target.style.borderColor='#e5e7eb';e.target.style.background='#f9fafb';}} />
                 </div>
 
                 {/* Export/Print buttons */}

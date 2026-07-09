@@ -1,209 +1,285 @@
-﻿'use client';
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+'use client';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SlidersHorizontal, RotateCcw, Search, X, ChevronDown } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import { useGetCustomerSaleBillsQuery } from '../../services/customerSaleBillsApi';
 import SaleBillPrint from '../../components/print/SaleBillPrint';
 
-const today = new Date().toISOString().split('T')[0];
-const firstOfMonth = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })();
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const todayYmd = ymd(new Date());
 
-const QUICK = [
-    { label: 'Today', f: today, t: today },
-    { label: 'This Month', f: firstOfMonth, t: today },
-];
-
-function fmtDate(s) {
+function dmy(s) {
     if (!s) return '—';
     const [y, m, d] = s.split('-');
-    return `${d}/${m}/${y}`;
+    return `${d}-${m}-${y}`;
+}
+function parseLocal(s) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
 }
 function fmtAmt(n) {
-    const v = parseFloat(n) || 0;
-    return v.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    return (parseFloat(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+}
+
+const QUICK = [
+    { label: 'Today',      get: () => ({ from: todayYmd, to: todayYmd }) },
+    { label: 'This Week',  get: () => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return { from: ymd(d), to: todayYmd }; } },
+    { label: 'This Month', get: () => { const n = new Date(); return { from: ymd(new Date(n.getFullYear(), n.getMonth(), 1)), to: todayYmd }; } },
+    { label: 'Last Month', get: () => { const n = new Date(); return { from: ymd(new Date(n.getFullYear(), n.getMonth() - 1, 1)), to: ymd(new Date(n.getFullYear(), n.getMonth(), 0)) }; } },
+];
+
+function SkeletonCard() {
+    return (
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-card">
+            <div className="flex justify-between mb-3">
+                <div className="skeleton h-4 w-2/5 rounded-lg" />
+                <div className="skeleton h-5 w-16 rounded-lg" />
+            </div>
+            <div className="skeleton h-3 w-1/3 rounded mb-3" />
+            <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map(j => <div key={j} className="skeleton h-10 rounded-xl" />)}
+            </div>
+        </div>
+    );
 }
 
 export default function SaleBillsPage() {
-    const [fromDate, setFromDate] = useState(firstOfMonth);
-    const [toDate, setToDate] = useState(today);
-    const [applied, setApplied] = useState({ from: firstOfMonth, to: today });
-    const [activeQ, setActiveQ] = useState('This Month');
-    const { data: bills = [], isLoading, refetch } = useGetCustomerSaleBillsQuery({
-        from_date: applied.from,
-        to_date: applied.to,
-    });
+    const defaultRange = QUICK[0].get();
 
-    const totalAmt = bills.reduce((s, b) => s + (parseFloat(b.sale_rate || 0) * parseFloat(b.doqntl || 0)), 0);
+    const [fromDate,   setFromDate]   = useState(defaultRange.from);
+    const [toDate,     setToDate]     = useState(defaultRange.to);
+    const [applied,    setApplied]    = useState({ from: defaultRange.from, to: defaultRange.to });
+    const [activeQ,    setActiveQ]    = useState('Today');
+    const [millSearch, setMillSearch] = useState('');
+    const [showFilter, setShowFilter] = useState(false);
+    const [expanded,   setExpanded]   = useState(null);
 
-    const inputStyle = { padding: '11px 12px', background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#111827', outline: 'none', fontFamily: 'inherit', width: '100%' };
+    const { data: allBills = [], isLoading } = useGetCustomerSaleBillsQuery();
+
+    const filtered = useMemo(() => {
+        const from = parseLocal(applied.from);
+        const to   = parseLocal(applied.to);
+        to.setHours(23, 59, 59, 999);
+        return allBills.filter(b => {
+            const docDate = b.doc_date ? new Date(b.doc_date) : null;
+            if (!docDate || docDate < from || docDate > to) return false;
+            if (!millSearch.trim()) return true;
+            const q = millSearch.toLowerCase().trim();
+            return (b.Mill_Name || b.millname || '').toLowerCase().includes(q)
+                || (b.billto || '').toLowerCase().includes(q);
+        });
+    }, [allBills, applied, millSearch]);
+
+    const applyPreset = (q) => {
+        const r = q.get();
+        setFromDate(r.from); setToDate(r.to);
+        setApplied({ from: r.from, to: r.to });
+        setActiveQ(q.label);
+    };
+
+    const applyFilter = () => { setApplied({ from: fromDate, to: toDate }); setShowFilter(false); };
+    const resetFilter = () => {
+        const r = QUICK[0].get();
+        setFromDate(r.from); setToDate(r.to); setApplied(r); setActiveQ('Today'); setMillSearch('');
+    };
 
     return (
-        <AppLayout title="Customer Sale Bills" showBack>
-            <div style={{ padding: '12px 16px 32px', fontFamily: 'Signika, ui-sans-serif, system-ui, sans-serif' }}>
+        <AppLayout title="Sale Bills" showBack>
+            <div className="px-4 pt-3 pb-10">
 
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                    style={{ background: 'linear-gradient(135deg,#059669,#047857)', borderRadius: 18, padding: '16px 18px', marginBottom: 18, boxShadow: '0 6px 20px rgba(5,150,105,0.3)' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <div>
-                            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 700 }}>TOTAL BILLED</p>
-                            <p style={{ color: 'white', fontSize: 20, fontWeight: 900 }}>₹{fmtAmt(totalAmt)}</p>
-                            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 500 }}>{bills.length} bill{bills.length !== 1 ? 's' : ''} · {fmtDate(applied.from)} – {fmtDate(applied.to)}</p>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                            <span style={{ fontSize: 28 }}>🧾</span>
-                            {bills.length > 0 && (
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                    <button onClick={() => {
-                                        const csv = ['Bill Date,Mill Name,Bill To,Grade,Qty (qtl),Rate,Amount,Truck No',
-                                            ...bills.map(b => [b.doc_date, `"${(b.Mill_Name || b.millname || '').replace(/"/g, '""')}"`, `"${(b.billto || '').replace(/"/g, '""')}"`, b.Grade || '', parseFloat(b.doqntl || 0).toFixed(2), parseFloat(b.sale_rate || 0).toFixed(2), (parseFloat(b.sale_rate || 0) * parseFloat(b.doqntl || 0)).toFixed(2), b.truck_no || ''].join(','))
-                                        ].join('\n');
-                                        const a = document.createElement('a');
-                                        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-                                        a.download = `sale-bills-${applied.from}-${applied.to}.csv`;
-                                        a.click();
-                                    }} style={{ padding: '5px 10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8, fontSize: 11, fontWeight: 700, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        ⬇ CSV
-                                    </button>
-                                    <button onClick={() => window.print()} style={{ padding: '5px 10px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8, fontSize: 11, fontWeight: 700, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        🖨 Print All
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Quick presets */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                    {QUICK.map(q => (
-                        <button key={q.label} onClick={() => { setFromDate(q.f); setToDate(q.t); setApplied({ from: q.f, to: q.t }); setActiveQ(q.label); }}
-                            style={{ padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${activeQ === q.label ? '#059669' : '#e5e7eb'}`, background: activeQ === q.label ? '#f0fdf4' : 'white', color: activeQ === q.label ? '#047857' : '#6b7280', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                            {q.label}
+                {/* Search bar — always visible */}
+                <div className="relative mb-3">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={15} strokeWidth={2.5} />
+                    <input
+                        value={millSearch}
+                        onChange={e => setMillSearch(e.target.value)}
+                        placeholder="Search mill or party name…"
+                        className="w-full pl-10 pr-9 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-900 placeholder-gray-400 outline-none shadow-card transition-all focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                    />
+                    {millSearch && (
+                        <button onClick={() => setMillSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
+                            <X size={11} className="text-gray-500" />
                         </button>
-                    ))}
+                    )}
                 </div>
 
-                {/* Filter */}
-                <div style={{ background: 'white', borderRadius: 16, padding: '14px', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', marginBottom: 16, border: '1px solid #f3f4f6' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>From</label>
-                            <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setActiveQ(null); }} style={inputStyle} onFocus={e => { e.target.style.borderColor = '#059669'; e.target.style.background = 'white'; }} onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>To</label>
-                            <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setActiveQ(null); }} style={inputStyle} onFocus={e => { e.target.style.borderColor = '#059669'; e.target.style.background = 'white'; }} onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }} />
-                        </div>
+                {/* Section header */}
+                <div className="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 className="text-base font-black text-gray-900 leading-tight">Customer Sale Bills</h2>
+                        <p className="text-xs text-gray-400 mt-0.5 font-medium">
+                            {activeQ ? `${activeQ} · ${dmy(applied.from)}${applied.from !== applied.to ? ` – ${dmy(applied.to)}` : ''}` : `${dmy(applied.from)} – ${dmy(applied.to)}`}
+                            {!isLoading && filtered.length > 0 && ` · ${filtered.length} bills`}
+                        </p>
                     </div>
-                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => setApplied({ from: fromDate, to: toDate })}
-                        style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg,#059669,#047857)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 800, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-                        Apply Filter
-                    </motion.button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={resetFilter} className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
+                            <RotateCcw size={14} strokeWidth={2.2} />
+                        </button>
+                        <button onClick={() => setShowFilter(v => !v)}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+                            style={{ background: showFilter ? '#ef3837' : 'white', border: `1.5px solid ${showFilter ? '#ef3837' : '#e5e7eb'}`, color: showFilter ? 'white' : '#374151' }}>
+                            <SlidersHorizontal size={13} strokeWidth={2.5} /> Filter
+                        </button>
+                    </div>
                 </div>
 
-                {/* Bills list */}
-                {isLoading ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {[1, 2, 3].map(i => (
-                            <div key={i} style={{ background: 'white', borderRadius: 14, padding: '14px', border: '1px solid #f3f4f6' }}>
-                                <div className="skeleton" style={{ height: 16, width: '50%', marginBottom: 8 }} />
-                                <div className="skeleton" style={{ height: 12, width: '70%', marginBottom: 8 }} />
-                                <div className="skeleton" style={{ height: 20, width: '35%' }} />
-                            </div>
-                        ))}
-                    </div>
-                ) : bills.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '56px 20px', background: 'white', borderRadius: 18, border: '1.5px dashed #e5e7eb' }}>
-                        <div style={{ fontSize: 44, marginBottom: 12 }}>🧾</div>
-                        <p style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>No sale bills found</p>
-                        <p style={{ color: '#9ca3af', fontSize: 13 }}>No bills for the selected date range.</p>
-                    </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {bills.map((bill, i) => (
-                            <motion.div key={bill.saleid || i}
-                                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.05, 0.4) }}
-                                style={{ background: 'white', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                                    <div>
-                                        <p style={{ fontWeight: 800, fontSize: 14, color: '#111827', marginBottom: 3 }}>
-                                            {bill.Mill_Name || bill.millname || 'Mill'}
-                                        </p>
-                                        <p style={{ fontSize: 12, color: '#6b7280', fontWeight: 500 }}>
-                                            {fmtDate(bill.doc_date)} · {bill.billto || ''}
-                                        </p>
-                                    </div>
-                                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                                        <p style={{ fontWeight: 900, fontSize: 16, color: '#059669' }}>
-                                            ₹{fmtAmt(parseFloat(bill.sale_rate || 0) * parseFloat(bill.doqntl || 0))}
-                                        </p>
-                                        <SaleBillPrint saleid={bill.saleid} />
-                                    </div>
+                {/* Collapsible filter */}
+                <AnimatePresence>
+                    {showFilter && (
+                        <motion.div key="filter"
+                            initial={{ opacity: 0, height: 0, marginBottom: 0 }} animate={{ opacity: 1, height: 'auto', marginBottom: 14 }}
+                            exit={{ opacity: 0, height: 0, marginBottom: 0 }} transition={{ duration: 0.22 }}
+                            className="overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 shadow-card-md border border-gray-100">
+                                {/* Presets */}
+                                <div className="flex gap-2 mb-4 overflow-x-auto pb-0.5">
+                                    {QUICK.map(q => (
+                                        <button key={q.label} onClick={() => applyPreset(q)}
+                                            className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all"
+                                            style={{
+                                                background: activeQ === q.label ? '#ef3837' : '#f3f4f6',
+                                                color: activeQ === q.label ? 'white' : '#6b7280',
+                                                border: `1.5px solid ${activeQ === q.label ? '#ef3837' : 'transparent'}`,
+                                                boxShadow: activeQ === q.label ? '0 3px 10px rgba(239,56,55,0.25)' : 'none',
+                                            }}>
+                                            {q.label}
+                                        </button>
+                                    ))}
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                                    {[
-                                        { label: 'Grade', value: bill.Grade || '—' },
-                                        { label: 'Qty', value: `${parseFloat(bill.doqntl || 0).toFixed(2)} qtl` },
-                                        { label: 'Rate', value: `₹${parseFloat(bill.sale_rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` },
-                                    ].map(({ label, value }) => (
-                                        <div key={label} style={{ background: '#f9fafb', borderRadius: 8, padding: '6px 8px' }}>
-                                            <p style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 2 }}>{label}</p>
-                                            <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
+
+                                {/* Date range */}
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                    {[{ label: 'From', val: fromDate, set: setFromDate }, { label: 'To', val: toDate, set: setToDate }].map(f => (
+                                        <div key={f.label}>
+                                            <label className="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1.5">{f.label}</label>
+                                            <input type="date" value={f.val}
+                                                onChange={e => { f.set(e.target.value); setActiveQ(null); }}
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 outline-none focus:border-red-400 focus:bg-white transition-all" />
                                         </div>
                                     ))}
                                 </div>
-                                {bill.truck_no && (
-                                    <p style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, marginTop: 8 }}>🚛 {bill.truck_no}</p>
-                                )}
-                            </motion.div>
-                        ))}
+
+                                {/* Actions */}
+                                <div className="flex gap-2">
+                                    <motion.button whileTap={{ scale: 0.97 }} onClick={applyFilter}
+                                        className="flex-1 py-3 rounded-xl text-sm font-extrabold text-white"
+                                        style={{ background: 'linear-gradient(135deg,#ef3837,#b91c1c)', boxShadow: '0 4px 14px rgba(239,56,55,0.28)' }}>
+                                        Apply Filter
+                                    </motion.button>
+                                    <button onClick={resetFilter}
+                                        className="w-11 h-11 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                        <RotateCcw size={15} className="text-gray-500" strokeWidth={2.2} />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Bills list */}
+                {isLoading ? (
+                    <div className="flex flex-col gap-3">
+                        {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+                        <div className="text-5xl mb-3">🧾</div>
+                        <p className="font-black text-gray-700 text-base mb-1">No sale bills found</p>
+                        <p className="text-gray-400 text-sm">
+                            {millSearch ? 'No bills match your search.' : `No bills for ${activeQ || 'the selected range'}.`}
+                        </p>
+                    </motion.div>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        {filtered.map((bill, i) => {
+                            const id = bill.saleid || i;
+                            const isOpen = expanded === id;
+                            const total = parseFloat(bill.sale_rate || 0) * parseFloat(bill.doqntl || 0);
+
+                            return (
+                                <motion.div key={id}
+                                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: Math.min(i * 0.04, 0.35) }}
+                                    className="bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+
+                                    {/* Card header — always visible, tap to expand */}
+                                    <button onClick={() => setExpanded(isOpen ? null : id)}
+                                        className="w-full text-left p-4">
+                                        <div className="flex items-start justify-between mb-2.5">
+                                            <div className="flex-1 min-w-0 mr-3">
+                                                <p className="font-black text-sm text-gray-900 truncate">
+                                                    {bill.Mill_Name || bill.millname || 'Mill'}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-0.5 font-medium">
+                                                    {dmy(bill.doc_date?.split('T')[0])}
+                                                    {bill.billto ? ` · ${bill.billto}` : ''}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                <p className="font-black text-base text-emerald-600">₹{fmtAmt(total)}</p>
+                                                <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                                    <ChevronDown size={16} className="text-gray-400" />
+                                                </motion.div>
+                                            </div>
+                                        </div>
+
+                                        {/* Quick stats — always visible */}
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[
+                                                { label: 'Grade',    value: bill.Grade || '—',   bg: bill.Grade ? '#f5f3ff' : '#f9fafb', color: bill.Grade ? '#7c3aed' : '#9ca3af' },
+                                                { label: 'Qty (qtl)',value: parseFloat(bill.doqntl || 0).toFixed(2), bg: '#f9fafb', color: '#374151' },
+                                                { label: 'Rate',     value: `₹${parseFloat(bill.sale_rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, bg: '#eff6ff', color: '#1d4ed8' },
+                                            ].map(({ label, value, bg, color }) => (
+                                                <div key={label} className="rounded-xl py-2 px-2 text-center" style={{ background: bg }}>
+                                                    <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-0.5">{label}</p>
+                                                    <p className="text-xs font-black truncate" style={{ color }}>{value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </button>
+
+                                    {/* Expanded details */}
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div key="exp"
+                                                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                                className="overflow-hidden">
+                                                <div className="border-t border-gray-50 px-4 pb-4 pt-3">
+                                                    {/* Extra info row */}
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 font-semibold">
+                                                            {bill.truck_no && <><span>🚛</span><span>{bill.truck_no}</span></>}
+                                                        </div>
+                                                        {bill.saleid && <SaleBillPrint saleid={bill.saleid} />}
+                                                    </div>
+
+                                                    {/* Additional fields */}
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {[
+                                                            { label: 'Bill To',   value: bill.billto || '—' },
+                                                            { label: 'Season',    value: bill.season || '—' },
+                                                            { label: 'Doc Date',  value: dmy(bill.doc_date?.split('T')[0]) },
+                                                            { label: 'Total Amt', value: `₹${fmtAmt(total)}`, bold: true, color: '#059669' },
+                                                        ].map(({ label, value, bold, color }) => (
+                                                            <div key={label} className="bg-gray-50 rounded-xl px-3 py-2">
+                                                                <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-0.5">{label}</p>
+                                                                <p className="text-xs font-bold" style={{ color: color || '#374151', fontWeight: bold ? 900 : 700 }}>{value}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 )}
-            {/* Print-only view (all bills table) */}
-            {bills.length > 0 && (
-                <div className="print-only" style={{ display: 'none', fontFamily: 'Signika, sans-serif', padding: 20 }}>
-                    <h2 style={{ textAlign: 'center', marginBottom: 6 }}>Sale Bills</h2>
-                    <p style={{ textAlign: 'center', fontSize: 12, marginBottom: 12 }}>{fmtDate(applied.from)} to {fmtDate(applied.to)} · {bills.length} bills · Total ₹{fmtAmt(totalAmt)}</p>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-                        <thead>
-                            <tr style={{ background: '#059669', color: 'white' }}>
-                                {['Date', 'Mill Name', 'Bill To', 'Grade', 'Qty (qtl)', 'Rate (₹)', 'Amount (₹)', 'Truck'].map(h => (
-                                    <th key={h} style={{ padding: '6px 8px', border: '1px solid #ccc', textAlign: 'left' }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {bills.map((b, i) => (
-                                <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#f0fdf4' }}>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb' }}>{fmtDate(b.doc_date)}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb' }}>{b.Mill_Name || b.millname}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb' }}>{b.billto}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb' }}>{b.Grade}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb', textAlign: 'right' }}>{parseFloat(b.doqntl || 0).toFixed(2)}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb', textAlign: 'right' }}>{parseFloat(b.sale_rate || 0).toFixed(2)}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb', textAlign: 'right' }}>{(parseFloat(b.sale_rate || 0) * parseFloat(b.doqntl || 0)).toFixed(2)}</td>
-                                    <td style={{ padding: '5px 8px', border: '1px solid #e5e7eb' }}>{b.truck_no}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr style={{ background: '#ecfdf5', fontWeight: 700 }}>
-                                <td colSpan={6} style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'right' }}>Total:</td>
-                                <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'right' }}>{fmtAmt(totalAmt)}</td>
-                                <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb' }} />
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            )}
-            <style>{`
-                @media print {
-                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                    body * { visibility: hidden !important; }
-                    .print-only, .print-only * { visibility: visible !important; }
-                    .print-only { position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; background: white !important; z-index: 9999 !important; }
-                }
-            `}</style>
             </div>
         </AppLayout>
     );

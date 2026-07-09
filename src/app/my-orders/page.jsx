@@ -13,6 +13,7 @@ import {
 import { useGetMeQuery } from '../../services/authApi';
 import { useGetMyAccountQuery } from '../../services/accountMasterApi';
 import GstAccountPicker from '../../components/GstAccountPicker';
+import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 
 const COMPANY_CODE = parseInt(process.env.NEXT_PUBLIC_COMPANY_CODE) || 4;
 const YEAR_CODE    = parseInt(process.env.NEXT_PUBLIC_YEAR_CODE)    || 1;
@@ -39,6 +40,7 @@ const toApiDate = (v) => {
 const fmtQty = (v) => parseFloat(v || 0).toFixed(2);
 const gradeFirst = (v) => v ? v.split(' - ')[0].trim() : '—';
 const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const dmy = (s) => { if (!s) return '—'; const [y, m, d] = s.split('-'); return `${d}-${m}-${y}`; };
 
 const inputStyle = {
     width: '100%', padding: '11px 12px', background: '#f9fafb',
@@ -176,7 +178,9 @@ export default function MyOrdersPage() {
     const [tab, setTab] = useState('orders');
     const [pendingOnly, setPendingOnly] = useState(true);
     const [doDate, setDoDate] = useState({ from: todayStr(), to: todayStr() });
+    const [doPendingDate, setDoPendingDate] = useState({ from: todayStr(), to: todayStr() });
     const [activeDoPreset, setActiveDoPreset] = useState('Today');
+    const [showDoFilter, setShowDoFilter] = useState(false);
 
     const [selectedOrderForDO, setSelectedOrderForDO] = useState(null);
     const emptyDOForm = { Lifting_Quintal: '', DOc_Date: todayStr(), TruckNo: '', DriverMobileNo: '', Narration: '', Amount: '', Payment_Details: '' };
@@ -406,7 +410,7 @@ export default function MyOrdersPage() {
                 <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 14, padding: 4, marginBottom: 16 }}>
                     {[
                         { id: 'orders', label: isAdmin ? 'All Orders' : 'My Orders', icon: '📦' },
-                        { id: 'pending', label: 'Pending DOs', icon: '🚚' },
+                        { id: 'pending', label: 'Pending Delivery Orders', icon: '🚚' },
                     ].map(t => (
                         <button key={t.id} onClick={() => setTab(t.id)}
                             style={{ flex: 1, padding: '10px 8px', border: 'none', cursor: 'pointer', borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s', background: tab === t.id ? 'white' : 'transparent', color: tab === t.id ? '#ef3837' : '#6b7280', boxShadow: tab === t.id ? '0 1px 6px rgba(0,0,0,0.08)' : 'none' }}>
@@ -483,30 +487,59 @@ export default function MyOrdersPage() {
                 {/* ── Pending DOs tab ── */}
                 {tab === 'pending' && (
                     <>
-                        <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 14, border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                            <div style={{ display: 'flex', gap: 6, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
-                                {[
-                                    { label: 'Today', from: todayStr(), to: todayStr() },
-                                    { label: 'Last 7D', from: (() => { const d = new Date(); d.setDate(d.getDate()-6); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(), to: todayStr() },
-                                    { label: 'This Month', from: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`; })(), to: todayStr() },
-                                    { label: 'Last Month', from: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth()-1, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; })(), to: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth(), 0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() },
-                                ].map(p => (
-                                    <button key={p.label} onClick={() => { setDoDate({ from: p.from, to: p.to }); setActiveDoPreset(p.label); }}
-                                        style={{ flexShrink: 0, padding: '7px 13px', background: activeDoPreset === p.label ? '#fff1f0' : '#f3f4f6', border: `1.5px solid ${activeDoPreset === p.label ? '#ef3837' : 'transparent'}`, borderRadius: 20, fontSize: 11, fontWeight: 700, color: activeDoPreset === p.label ? '#ef3837' : '#374151', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                                        {p.label}
-                                    </button>
-                                ))}
+                        {/* Section header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <div>
+                                <p style={{ fontWeight: 800, fontSize: 15, color: '#111827', margin: 0 }}>Pending Delivery Orders</p>
+                                <p style={{ fontSize: 11, color: '#6b7280', fontWeight: 500, marginTop: 2 }}>{dmy(doDate.from)} – {dmy(doDate.to)}</p>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                                {['from', 'to'].map(key => (
-                                    <div key={key}>
-                                        <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>{key === 'from' ? 'From Date' : 'To Date'}</label>
-                                        <input type="date" value={doDate[key]} onChange={e => { setDoDate(p => ({ ...p, [key]: e.target.value })); setActiveDoPreset(null); }}
-                                            style={{ width: '100%', padding: '10px 12px', background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111827' }} />
-                                    </div>
-                                ))}
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <button onClick={() => setShowDoFilter(p => !p)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: showDoFilter ? '#ef3837' : 'white', border: `1.5px solid ${showDoFilter ? '#ef3837' : '#e5e7eb'}`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: showDoFilter ? 'white' : '#374151', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                                    <SlidersHorizontal size={13} /> Filter
+                                </button>
                             </div>
                         </div>
+
+                        {/* Collapsible filter card */}
+                        <AnimatePresence initial={false}>
+                            {showDoFilter && (
+                                <motion.div key="do-filter"
+                                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                    style={{ overflow: 'hidden', marginBottom: 14 }}>
+                                    <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                                        <div style={{ display: 'flex', gap: 6, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
+                                            {[
+                                                { label: 'Today',      from: todayStr(), to: todayStr() },
+                                                { label: 'This Week',  from: (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(), to: todayStr() },
+                                                { label: 'This Month', from: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`; })(), to: todayStr() },
+                                                { label: 'Last Month', from: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth()-1, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; })(), to: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth(), 0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() },
+                                            ].map(p => (
+                                                <button key={p.label} onClick={() => { setDoPendingDate({ from: p.from, to: p.to }); setActiveDoPreset(p.label); }}
+                                                    style={{ flexShrink: 0, padding: '6px 13px', background: activeDoPreset === p.label ? '#ef3837' : '#f3f4f6', border: `1.5px solid ${activeDoPreset === p.label ? '#ef3837' : 'transparent'}`, borderRadius: 20, fontSize: 11, fontWeight: 700, color: activeDoPreset === p.label ? 'white' : '#374151', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', boxShadow: activeDoPreset === p.label ? '0 3px 10px rgba(239,56,55,0.25)' : 'none' }}>
+                                                    {p.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                                            {['from', 'to'].map(key => (
+                                                <div key={key}>
+                                                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>{key === 'from' ? 'From Date' : 'To Date'}</label>
+                                                    <input type="date" value={doPendingDate[key]} onChange={e => { setDoPendingDate(p => ({ ...p, [key]: e.target.value })); setActiveDoPreset(null); }}
+                                                        style={{ width: '100%', padding: '10px 12px', background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111827' }}
+                                                        onFocus={e => { e.target.style.borderColor = '#ef3837'; e.target.style.background = 'white'; }} onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={() => { setDoDate(doPendingDate); setShowDoFilter(false); }}
+                                            style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg,#ef3837,#dc2626)', border: 'none', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                            Apply Filter
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {doLoading ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -13,7 +13,7 @@ export const myesalesaudaApi = createApi({
                 if (dateFrom) params.append('date_from', dateFrom);
                 if (dateTo)   params.append('date_to',   dateTo);
                 const qs = params.toString();
-                return `/myesaleSauda${qs ? '?' + qs : ''}`;
+                return `/myesaleSauda/${qs ? '?' + qs : ''}`;
             },
             providesTags: ['Myesalesauda'],
         }),

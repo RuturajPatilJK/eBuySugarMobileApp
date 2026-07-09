@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import { useGetTrackOrdersQuery } from '../../services/trackOrdersApi';
 import SaleBillPrint from '../../components/print/SaleBillPrint';
@@ -169,6 +170,7 @@ export default function TrackOrdersPage() {
     const [query, setQuery] = useState({ fromDate: today, toDate: today });
     const [selectedId, setSelectedId] = useState(null);
     const [activePreset, setActivePreset] = useState('Today');
+    const [showFilter, setShowFilter] = useState(false);
 
     const { data: orders = [], isLoading, isFetching } =
         useGetTrackOrdersQuery(query, { refetchOnMountOrArgChange: true });
@@ -185,44 +187,69 @@ export default function TrackOrdersPage() {
     };
 
     const presets = [
-        { label: 'Today', from: today, to: today },
-        { label: 'Last 7D', from: (() => { const d = new Date(); d.setDate(d.getDate()-6); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(), to: today },
+        { label: 'Today',      from: today, to: today },
+        { label: 'This Week',  from: (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(), to: today },
         { label: 'This Month', from: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; })(), to: today },
-        { label: 'Last Month', from: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}-01`; })(), to: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}-${new Date(d.getFullYear(), d.getMonth(), 0).getDate()}`; })() },
+        { label: 'Last Month', from: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()).padStart(2,'0')}-01`; })(), to: (() => { const n = new Date(); const d = new Date(n.getFullYear(), n.getMonth(), 0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() },
     ];
 
     const total = orders.length;
     const completed = orders.filter(o => progressOf(o) === 4).length;
     const inProgress = total - completed;
 
+    const inp = { padding:'10px 12px', background:'#f9fafb', border:'1.5px solid #e5e7eb', borderRadius:10, fontSize:13, fontWeight:600, color:'#111827', outline:'none', fontFamily:'inherit', width:'100%', boxSizing:'border-box' };
+    const dmyFmt = (s) => { if(!s) return '—'; const [y,m,d]=s.split('-'); return `${d}-${m}-${y}`; };
+
     return (
         <AppLayout title="Track Orders">
             <div style={{ padding: '12px 16px 32px', fontFamily: 'Signika, ui-sans-serif, system-ui, sans-serif' }}>
 
-                {/* Date filter */}
-                <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', marginBottom: 14, border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                    <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                        {presets.map(p => (
-                            <button key={p.label} onClick={() => handlePreset(p.label, p.from, p.to)}
-                                style={{ flex: 1, padding: '7px 4px', borderRadius: 8, border: `1.5px solid ${activePreset === p.label ? '#ef3837' : '#e5e7eb'}`, background: activePreset === p.label ? '#fff1f0' : 'white', color: activePreset === p.label ? '#ef3837' : '#6b7280', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                {p.label}
-                            </button>
-                        ))}
+                {/* Section header */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                    <div>
+                        <h2 style={{ margin:0, fontSize:17, fontWeight:900, color:'#111827' }}>Track Orders</h2>
+                        <p style={{ margin:'2px 0 0', fontSize:12, color:'#9ca3af', fontWeight:500 }}>
+                            {activePreset!=='Custom' ? `${activePreset} · ${dmyFmt(query.fromDate)}${query.fromDate!==query.toDate?` – ${dmyFmt(query.toDate)}`:''}` : `${dmyFmt(query.fromDate)} – ${dmyFmt(query.toDate)}`}
+                            {!isLoading && orders.length>0 && ` · ${orders.length} order${orders.length!==1?'s':''}`}
+                        </p>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        {[{ key: 'from', label: 'From', val: fromDate, set: setFromDate }, { key: 'to', label: 'To', val: toDate, set: setToDate }].map(f => (
-                            <div key={f.key}>
-                                <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4 }}>{f.label}</label>
-                                <input type="date" value={f.val} onChange={e => { f.set(e.target.value); setActivePreset('Custom'); }}
-                                    style={{ width: '100%', padding: '9px 10px', background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 9, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111827' }} />
-                            </div>
-                        ))}
-                    </div>
-                    <button onClick={() => setQuery({ fromDate, toDate })}
-                        style={{ width: '100%', marginTop: 10, padding: '10px', background: 'linear-gradient(135deg,#ef3837,#d92300)', border: 'none', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {isFetching ? 'Loading…' : 'Apply Filter'}
+                    <button onClick={() => setShowFilter(v=>!v)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:showFilter?'#ef3837':'white', border:`1.5px solid ${showFilter?'#ef3837':'#e5e7eb'}`, color:showFilter?'white':'#374151', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', WebkitTapHighlightColor:'transparent' }}>
+                        <SlidersHorizontal size={14} strokeWidth={2.5} /> Filter
                     </button>
                 </div>
+
+                {/* Date filter */}
+                <AnimatePresence>
+                    {showFilter && (
+                        <motion.div key="filter" initial={{ opacity:0, height:0, marginBottom:0 }} animate={{ opacity:1, height:'auto', marginBottom:16 }} exit={{ opacity:0, height:0, marginBottom:0 }} transition={{ duration:0.22 }} style={{ overflow:'hidden' }}>
+                            <div style={{ background:'white', borderRadius:16, padding:16, boxShadow:'0 2px 12px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
+                                <div style={{ display:'flex', gap:7, marginBottom:14, flexWrap:'wrap' }}>
+                                    {presets.map(p => (
+                                        <button key={p.label} onClick={() => { handlePreset(p.label, p.from, p.to); }} style={{ padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:700, border:`1.5px solid ${activePreset===p.label?'#ef3837':'#e5e7eb'}`, background:activePreset===p.label?'#ef3837':'#f9fafb', color:activePreset===p.label?'white':'#6b7280', cursor:'pointer', fontFamily:'inherit', WebkitTapHighlightColor:'transparent', boxShadow:activePreset===p.label?'0 3px 10px rgba(239,56,55,0.25)':'none' }}>
+                                            {p.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
+                                    {[{key:'from',label:'From',val:fromDate,set:setFromDate},{key:'to',label:'To',val:toDate,set:setToDate}].map(f=>(
+                                        <div key={f.key}>
+                                            <label style={{ display:'block', fontSize:10, fontWeight:800, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:5 }}>{f.label}</label>
+                                            <input type="date" value={f.val} onChange={e=>{f.set(e.target.value);setActivePreset('Custom');}} style={inp} onFocus={e=>{e.target.style.borderColor='#ef3837';e.target.style.background='white';}} onBlur={e=>{e.target.style.borderColor='#e5e7eb';e.target.style.background='#f9fafb';}} />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{ display:'flex', gap:8 }}>
+                                    <motion.button whileTap={{ scale:0.97 }} onClick={() => { setQuery({fromDate,toDate}); setShowFilter(false); }} style={{ flex:1, padding:'12px', borderRadius:12, background:'linear-gradient(135deg,#ef3837,#b91c1c)', border:'none', fontSize:13, fontWeight:800, color:'white', cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 14px rgba(239,56,55,0.28)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                                        {isFetching ? <><div style={{ width:14,height:14,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin 0.7s linear infinite' }} />Loading…</> : 'Apply Filter'}
+                                    </motion.button>
+                                    <button onClick={() => { handlePreset('Today',today,today); }} style={{ width:44,height:44,borderRadius:12,flexShrink:0,background:'#f5f5f5',border:'1.5px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',WebkitTapHighlightColor:'transparent' }}>
+                                        <RotateCcw size={15} color="#6b7280" strokeWidth={2.2} />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Stats banner */}
                 {!isLoading && orders.length > 0 && (

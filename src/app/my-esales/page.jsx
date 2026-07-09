@@ -1,70 +1,168 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    SlidersHorizontal, RotateCcw, Search, X,
+    ChevronDown, Pencil, Trash2, Plus, TrendingUp,
+} from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
 import { useGetMyesalesaudaQuery, myesalesaudaApi } from '../../services/myesalesaudaApi';
 import { useUpdateTenderRatesAndQuantalMutation, useDeleteTenderMutation } from '../../services/tenderApi';
 
-const today = new Date().toISOString().split('T')[0];
-const firstOfMonth = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })();
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const todayYmd = ymd(new Date());
 
 function fmtDate(s) {
     if (!s) return '—';
     const dt = new Date(s);
     if (isNaN(dt)) return s;
-    return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+    return `${String(dt.getDate()).padStart(2,'0')}-${String(dt.getMonth()+1).padStart(2,'0')}-${dt.getFullYear()}`;
+}
+function dmy(s) {
+    if (!s) return '—';
+    const [y,m,d] = s.split('-');
+    return `${d}-${m}-${y}`;
 }
 function fmtAmt(n) {
-    const v = parseFloat(n) || 0;
-    return v.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    return (parseFloat(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+}
+function fmtNum(n) {
+    return (parseFloat(n) || 0).toFixed(2);
 }
 
 const QUICK = [
-    { label: 'Today', f: today, t: today },
-    { label: 'This Month', f: firstOfMonth, t: today },
+    { label: 'Today',      get: () => ({ from: todayYmd, to: todayYmd }) },
+    { label: 'This Week',  get: () => { const d = new Date(); d.setDate(d.getDate()-d.getDay()); return { from: ymd(d), to: todayYmd }; } },
+    { label: 'This Month', get: () => { const n = new Date(); return { from: ymd(new Date(n.getFullYear(),n.getMonth(),1)), to: todayYmd }; } },
+    { label: 'Last Month', get: () => { const n = new Date(); return { from: ymd(new Date(n.getFullYear(),n.getMonth()-1,1)), to: ymd(new Date(n.getFullYear(),n.getMonth(),0)) }; } },
 ];
 
-const inputSt = {
-    width: '100%', padding: '11px 12px', background: '#f9fafb',
-    border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14,
-    fontWeight: 600, color: '#111827', outline: 'none', fontFamily: 'inherit',
-};
+const STATUS_FILTERS = [
+    { label: 'All',      match: () => true },
+    { label: 'Active',   match: (i) => parseFloat(i.Balance||0) > 0 && i.stop_resume_trading !== 'Y' && i.stop_resume_trading !== 'E' },
+    { label: 'Sold Out', match: (i) => parseFloat(i.Balance||0) <= 0 },
+    { label: 'Stopped',  match: (i) => i.stop_resume_trading === 'Y' },
+    { label: 'Expired',  match: (i) => i.stop_resume_trading === 'E' },
+];
+
+function Spinner({ size = 16 }) {
+    return <div className="animate-lspin rounded-full border-2 border-white/30 border-t-white flex-shrink-0" style={{ width: size, height: size }} />;
+}
+
+function StatusBadge({ item }) {
+    const avail   = parseFloat(item.Balance || 0);
+    const isSoldOut = avail <= 0;
+    const isStopped = item.stop_resume_trading === 'Y';
+    const isExpired = item.stop_resume_trading === 'E';
+    if (isExpired) return (
+        <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wide"
+            style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+            ● EXPIRED
+        </span>
+    );
+    if (isStopped) return (
+        <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wide"
+            style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
+            ■ STOPPED
+        </span>
+    );
+    if (isSoldOut) return (
+        <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wide"
+            style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+            ✓ SOLD OUT
+        </span>
+    );
+    return (
+        <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full tracking-wide"
+            style={{ background: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe' }}>
+            ▶ ACTIVE
+        </span>
+    );
+}
+
+function cardAccent(item) {
+    if (item.stop_resume_trading === 'E') return '#ef4444';
+    if (item.stop_resume_trading === 'Y') return '#f59e0b';
+    if (parseFloat(item.Balance || 0) <= 0) return '#22c55e';
+    return '#7c3aed';
+}
+
+function SkeletonCard() {
+    return (
+        <div className="bg-white rounded-2xl overflow-hidden border border-gray-100" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+            <div className="px-4 pt-4 pb-3">
+                <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 mr-3">
+                        <div className="skeleton h-4 w-3/5 rounded-lg mb-2" />
+                        <div className="skeleton h-3 w-2/5 rounded" />
+                    </div>
+                    <div className="skeleton h-5 w-16 rounded-full" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {[1,2,3].map(j => <div key={j} className="skeleton h-16 rounded-xl" />)}
+                </div>
+            </div>
+            <div className="px-4 py-3 border-t border-gray-50 flex items-center justify-between">
+                <div className="skeleton h-5 w-20 rounded" />
+                <div className="flex gap-2">
+                    <div className="skeleton h-7 w-16 rounded-xl" />
+                    <div className="skeleton h-7 w-16 rounded-xl" />
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function MyESalesPage() {
     const dispatch = useDispatch();
-    const [fromDate, setFromDate] = useState(firstOfMonth);
-    const [toDate, setToDate] = useState(today);
-    const [applied, setApplied] = useState({ from: firstOfMonth, to: today });
-    const [activeQ, setActiveQ] = useState('This Month');
-    const [search, setSearch] = useState('');
-    const [editItem, setEditItem] = useState(null);
-    const [editForm, setEditForm] = useState({});
-    const [editErrors, setEditErrors] = useState({});
-    const [deleteItem, setDeleteItem] = useState(null);
-    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const router   = useRouter();
 
-    const { data: allSales = [], isLoading } = useGetMyesalesaudaQuery({
-        dateFrom: applied.from,
-        dateTo: applied.to,
-    });
-    const [updateSauda, { isLoading: isUpdating }] = useUpdateTenderRatesAndQuantalMutation();
+    const def = QUICK[0].get();
+    const [fromDate,     setFromDate]   = useState(def.from);
+    const [toDate,       setToDate]     = useState(def.to);
+    const [applied,      setApplied]    = useState({ from: def.from, to: def.to });
+    const [activeQ,      setActiveQ]    = useState('Today');
+    const [showFilter,   setShowFilter] = useState(false);
+    const [search,       setSearch]     = useState('');
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [expanded,     setExpanded]   = useState(null);
+    const [editItem,     setEditItem]   = useState(null);
+    const [editForm,     setEditForm]   = useState({});
+    const [editErrors,   setEditErrors] = useState({});
+    const [deleteItem,   setDeleteItem] = useState(null);
+    const [toast,        setToast]      = useState({ show: false, message: '', type: 'success' });
+
+    const { data: allSales = [], isLoading } = useGetMyesalesaudaQuery({ dateFrom: applied.from, dateTo: applied.to });
+    const [updateSauda,  { isLoading: isUpdating }] = useUpdateTenderRatesAndQuantalMutation();
     const [deleteTender, { isLoading: isDeleting }] = useDeleteTenderMutation();
 
-    const showToast = (message, type = 'success') => {
-        setToast({ show: true, message, type });
+    const showToast = (msg, type = 'success') => {
+        setToast({ show: true, message: msg, type });
         setTimeout(() => setToast(p => ({ ...p, show: false })), 3500);
     };
 
+    const statusMatcher = STATUS_FILTERS.find(f => f.label === statusFilter)?.match ?? (() => true);
+
+    const statusCounts = useMemo(() => {
+        const result = {};
+        STATUS_FILTERS.forEach(f => { result[f.label] = allSales.filter(f.match).length; });
+        return result;
+    }, [allSales]);
+
     const filtered = useMemo(() => {
-        if (!search) return allSales;
-        const q = search.toLowerCase();
-        return allSales.filter(item =>
-            (item.Ac_Name_E || '').toLowerCase().includes(q) ||
-            (item.Short_Name || '').toLowerCase().includes(q) ||
-            (item.gradeName || '').toLowerCase().includes(q)
-        );
-    }, [allSales, search]);
+        let list = allSales;
+        if (search) {
+            const q = search.toLowerCase();
+            list = list.filter(item =>
+                (item.Ac_Name_E || '').toLowerCase().includes(q) ||
+                (item.Short_Name || '').toLowerCase().includes(q) ||
+                (item.gradeName || '').toLowerCase().includes(q)
+            );
+        }
+        return list.filter(statusMatcher);
+    }, [allSales, search, statusMatcher]);
 
     const totalQty   = filtered.reduce((s, i) => s + parseFloat(i.Buyer_Quantal || 0), 0);
     const totalAvail = filtered.reduce((s, i) => s + parseFloat(i.Balance || 0), 0);
@@ -75,7 +173,7 @@ export default function MyESalesPage() {
         setEditForm({
             Sale_Rate:     item.Sale_Rate || '',
             Buyer_Quantal: item.Buyer_Quantal || '',
-            Lifting_Date:  item.Lifting_Date ? String(item.Lifting_Date).split('T')[0] : today,
+            Lifting_Date:  item.Lifting_Date ? String(item.Lifting_Date).split('T')[0] : todayYmd,
             from_software: (item.from_software || '').trim(),
             Quantal:       item.Quantal || item.Buyer_Quantal || '',
         });
@@ -85,24 +183,23 @@ export default function MyESalesPage() {
     const handleEditSave = async () => {
         const errs = {};
         const q = parseFloat(editForm.Buyer_Quantal);
-        if (!editForm.Buyer_Quantal)          errs.Buyer_Quantal = 'Required';
-        else if (isNaN(q) || q <= 0)          errs.Buyer_Quantal = 'Must be > 0';
-        else if (q % 5 !== 0)                 errs.Buyer_Quantal = 'Must be a multiple of 5';
         const r = parseFloat(editForm.Sale_Rate);
-        if (!editForm.Sale_Rate)              errs.Sale_Rate = 'Required';
-        else if (isNaN(r) || r <= 0)          errs.Sale_Rate = 'Must be > 0';
+        if (!editForm.Buyer_Quantal)    errs.Buyer_Quantal = 'Required';
+        else if (isNaN(q) || q <= 0)   errs.Buyer_Quantal = 'Must be > 0';
+        else if (q % 5 !== 0)          errs.Buyer_Quantal = 'Must be a multiple of 5';
+        if (!editForm.Sale_Rate)        errs.Sale_Rate = 'Required';
+        else if (isNaN(r) || r <= 0)   errs.Sale_Rate = 'Must be > 0';
         if (Object.keys(errs).length > 0) { setEditErrors(errs); return; }
         setEditErrors({});
-
         try {
             await updateSauda({
-                id:                 editItem.tenderid,
+                id: editItem.tenderid,
                 Tender_Date:        String(editItem.Sauda_Date || new Date().toISOString()).split('T')[0],
-                Mill_Rate:          parseFloat(editForm.Sale_Rate),
+                Mill_Rate:          r,
                 Narration:          '',
-                Party_Bill_Rate:    parseFloat(editForm.Sale_Rate),
+                Party_Bill_Rate:    r,
                 Quantal:            parseFloat(editForm.Quantal || editForm.Buyer_Quantal),
-                ebuy_quantal:       parseFloat(editForm.Buyer_Quantal),
+                ebuy_quantal:       q,
                 tenderdetailid:     editItem.tenderdetailid,
                 Lifting_Date:       editForm.Lifting_Date,
                 EbuySelectedParty:  null,
@@ -129,196 +226,320 @@ export default function MyESalesPage() {
             showToast('Sauda deleted!', 'success');
         } catch (err) {
             const detail = err?.data?.detail;
-            let msg = 'Failed to delete sauda';
-            if (typeof detail === 'string') msg = detail;
-            showToast(msg, 'error');
+            showToast(typeof detail === 'string' ? detail : 'Failed to delete sauda', 'error');
         }
     };
 
     return (
-        <AppLayout title="My E-Sales Sauda" showBack>
+        <AppLayout title="My eSale Sauda" showBack>
+
+            {/* Toast */}
             <AnimatePresence>
                 {toast.show && (
                     <motion.div initial={{ opacity: 0, y: -60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -60 }}
-                        style={{ position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderRadius: 14, fontWeight: 700, fontSize: 14, background: toast.type === 'success' ? '#059669' : '#ef4444', color: 'white', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap', fontFamily: 'Signika, sans-serif' }}>
-                        {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+                        className="fixed top-[72px] left-4 right-4 z-[9999] flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm text-white"
+                        style={{ background: toast.type === 'success' ? '#059669' : '#ef4444', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+                        <span className="text-base">{toast.type === 'success' ? '✓' : '✕'}</span>
+                        {toast.message}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div style={{ padding: '12px 16px 32px', fontFamily: 'Signika, ui-sans-serif, system-ui, sans-serif' }}>
+            <div className="px-4 pt-3 pb-10">
 
-                {/* ── Header banner ── */}
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                    style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', borderRadius: 18, padding: '16px 18px', marginBottom: 18, boxShadow: '0 6px 20px rgba(124,58,237,0.3)' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 700, margin: 0 }}>MY E-SALES SAUDA</p>
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80', display: 'inline-block', animation: 'wsping 2s ease-in-out infinite' }} title="Live updates" />
-                            </div>
-                            <p style={{ color: 'white', fontSize: 20, fontWeight: 900, margin: '2px 0' }}>{totalQty.toFixed(2)} Qtl</p>
-                            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 500, margin: 0 }}>{filtered.length} record{filtered.length !== 1 ? 's' : ''}</p>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                            <span style={{ fontSize: 28 }}>🏆</span>
-                            <div style={{ display: 'flex', gap: 14 }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Available</p>
-                                    <p style={{ color: '#4ade80', fontSize: 14, fontWeight: 900, margin: 0 }}>{totalAvail.toFixed(2)}</p>
-                                </div>
-                                <div style={{ textAlign: 'center' }}>
-                                    <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 9, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Sold</p>
-                                    <p style={{ color: '#fbbf24', fontSize: 14, fontWeight: 900, margin: 0 }}>{totalSold.toFixed(2)}</p>
-                                </div>
-                            </div>
-                        </div>
+                {/* ── Header row ── */}
+                <div className="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 className="text-base font-black text-gray-900">My eSale Sauda</h2>
+                        <p className="text-xs text-gray-400 mt-0.5 font-medium">
+                            {activeQ
+                                ? `${activeQ} · ${dmy(applied.from)}${applied.from !== applied.to ? ` – ${dmy(applied.to)}` : ''}`
+                                : `${dmy(applied.from)} – ${dmy(applied.to)}`}
+                            {!isLoading && filtered.length > 0 && ` · ${filtered.length} records`}
+                        </p>
                     </div>
-                </motion.div>
-
-                {/* ── Quick date presets ── */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                    {QUICK.map(q => (
-                        <button key={q.label}
-                            onClick={() => { setFromDate(q.f); setToDate(q.t); setApplied({ from: q.f, to: q.t }); setActiveQ(q.label); }}
-                            style={{ padding: '7px 16px', borderRadius: 20, border: `1.5px solid ${activeQ === q.label ? '#7c3aed' : '#e5e7eb'}`, background: activeQ === q.label ? '#f5f3ff' : 'white', color: activeQ === q.label ? '#7c3aed' : '#6b7280', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                            {q.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* ── Date filter ── */}
-                <div style={{ background: 'white', borderRadius: 16, padding: '14px', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', marginBottom: 14, border: '1px solid #f3f4f6' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>From</label>
-                            <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setActiveQ(null); }} style={inputSt}
-                                onFocus={e => { e.target.style.borderColor = '#7c3aed'; e.target.style.background = 'white'; }}
-                                onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }} />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>To</label>
-                            <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setActiveQ(null); }} style={inputSt}
-                                onFocus={e => { e.target.style.borderColor = '#7c3aed'; e.target.style.background = 'white'; }}
-                                onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }} />
-                        </div>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => setApplied({ from: fromDate, to: toDate })}
-                        style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 800, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-                        Apply Filter
+                    <motion.button whileTap={{ scale: 0.95 }}
+                        onClick={() => router.push('/add-sale')}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-extrabold text-white flex-shrink-0"
+                        style={{ background: 'linear-gradient(135deg,#ef3837,#d92300)', boxShadow: '0 4px 14px rgba(239,56,55,0.30)' }}>
+                        <Plus size={15} strokeWidth={2.8} /> New Sauda
                     </motion.button>
                 </div>
 
-                {/* ── Search ── */}
-                <div style={{ position: 'relative', marginBottom: 14 }}>
-                    <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-                    <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by mill or grade..."
-                        style={{ ...inputSt, paddingLeft: 36 }}
-                        onFocus={e => { e.target.style.borderColor = '#7c3aed'; e.target.style.background = 'white'; }}
-                        onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }} />
+                {/* ── Summary banner ── */}
+                {!isLoading && allSales.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl p-4 mb-3 relative overflow-hidden"
+                        style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 6px 24px rgba(124,58,237,0.30)' }}>
+                        <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/10" />
+                        <div className="absolute right-8 bottom-0 w-14 h-14 rounded-full bg-white/08" />
+                        <div className="absolute left-0 bottom-0 w-20 h-20 rounded-full bg-white/05" />
+                        <div className="flex items-center justify-between relative">
+                            <div>
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <TrendingUp size={11} className="text-white/60" />
+                                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Total Quantity</p>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-wsping" />
+                                </div>
+                                <p className="text-white text-2xl font-black leading-none">
+                                    {totalQty.toFixed(2)}
+                                    <span className="text-sm font-semibold text-white/50 ml-1.5">Qtl</span>
+                                </p>
+                            </div>
+                            <div className="flex gap-5">
+                                {[
+                                    { label: 'Available', value: totalAvail.toFixed(2), color: '#4ade80' },
+                                    { label: 'Sold',      value: totalSold.toFixed(2),  color: '#fbbf24' },
+                                ].map(({ label, value, color }) => (
+                                    <div key={label} className="text-right">
+                                        <p className="text-white/50 text-[10px] font-extrabold uppercase tracking-wider mb-0.5">{label}</p>
+                                        <p className="text-lg font-black" style={{ color }}>{value}</p>
+                                        <p className="text-white/40 text-[9px] font-semibold">Qtl</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* ── Search + Filter toggle ── */}
+                <div className="flex gap-2 mb-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} strokeWidth={2.5} />
+                        <input value={search} onChange={e => setSearch(e.target.value)}
+                            placeholder="Search mill or grade…"
+                            className="w-full pl-9 pr-8 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-900 placeholder-gray-400 outline-none shadow-card transition-all focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
+                        {search && (
+                            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
+                                <X size={10} className="text-gray-500" />
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <button onClick={() => { const r=QUICK[0].get(); setFromDate(r.from); setToDate(r.to); setApplied(r); setActiveQ('Today'); setSearch(''); setStatusFilter('All'); setShowFilter(false); }}
+                            className="w-10 h-10 rounded-2xl border border-gray-200 bg-white flex items-center justify-center">
+                            <RotateCcw size={14} className="text-gray-500" strokeWidth={2.2} />
+                        </button>
+                        <button onClick={() => setShowFilter(v => !v)}
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold flex-shrink-0 transition-all border"
+                            style={{ background: showFilter ? '#7c3aed' : 'white', borderColor: showFilter ? '#7c3aed' : '#e5e7eb', color: showFilter ? 'white' : '#374151' }}>
+                            <SlidersHorizontal size={13} /> Filter
+                        </button>
+                    </div>
                 </div>
 
-                {/* ── List ── */}
-                {isLoading ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {[1, 2, 3].map(i => (
-                            <div key={i} style={{ background: 'white', borderRadius: 14, padding: 14, border: '1px solid #f3f4f6' }}>
-                                <div className="skeleton" style={{ height: 16, width: '55%', marginBottom: 8 }} />
-                                <div className="skeleton" style={{ height: 12, width: '40%', marginBottom: 10 }} />
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                                    {[1, 2, 3].map(j => <div key={j} className="skeleton" style={{ height: 40, borderRadius: 8 }} />)}
+                {/* ── Sale type / Status filter pills — always visible ── */}
+                <div className="flex gap-2 mb-3 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                    {STATUS_FILTERS.map(f => {
+                        const isActive = statusFilter === f.label;
+                        const count = statusCounts[f.label] ?? 0;
+                        return (
+                            <button key={f.label} onClick={() => setStatusFilter(f.label)}
+                                className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all"
+                                style={{
+                                    background: isActive ? '#7c3aed' : '#f5f3ff',
+                                    color:      isActive ? 'white' : '#7c3aed',
+                                    border:     `1.5px solid ${isActive ? '#7c3aed' : '#ddd6fe'}`,
+                                    boxShadow:  isActive ? '0 3px 12px rgba(124,58,237,0.30)' : 'none',
+                                }}>
+                                {f.label}
+                                {count > 0 && (
+                                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                                        style={{ background: isActive ? 'rgba(255,255,255,0.25)' : '#ede9fe', color: isActive ? 'white' : '#7c3aed' }}>
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* ── Collapsible date filter ── */}
+                <AnimatePresence>
+                    {showFilter && (
+                        <motion.div key="filter" initial={{ opacity: 0, height: 0, marginBottom: 0 }} animate={{ opacity: 1, height: 'auto', marginBottom: 14 }}
+                            exit={{ opacity: 0, height: 0, marginBottom: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 border border-gray-100" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+                                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5">Date Range</p>
+                                <div className="flex gap-2 mb-4 overflow-x-auto pb-0.5">
+                                    {QUICK.map(q => (
+                                        <button key={q.label}
+                                            onClick={() => { const r=q.get(); setFromDate(r.from); setToDate(r.to); setApplied({from:r.from,to:r.to}); setActiveQ(q.label); }}
+                                            className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all"
+                                            style={{ background: activeQ===q.label?'#7c3aed':'#f3f4f6', color: activeQ===q.label?'white':'#6b7280', border: `1.5px solid ${activeQ===q.label?'#7c3aed':'transparent'}`, boxShadow: activeQ===q.label?'0 3px 10px rgba(124,58,237,0.25)':'none' }}>
+                                            {q.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                    {[{label:'From',val:fromDate,set:setFromDate},{label:'To',val:toDate,set:setToDate}].map(f=>(
+                                        <div key={f.label}>
+                                            <label className="block text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1.5">{f.label}</label>
+                                            <input type="date" value={f.val} onChange={e=>{f.set(e.target.value);setActiveQ(null);}}
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 outline-none focus:border-violet-400 focus:bg-white transition-all" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <motion.button whileTap={{scale:0.97}}
+                                        onClick={() => { setApplied({from:fromDate,to:toDate}); setShowFilter(false); }}
+                                        className="flex-1 py-3 rounded-xl text-sm font-extrabold text-white"
+                                        style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 4px 14px rgba(124,58,237,0.28)' }}>
+                                        Apply Filter
+                                    </motion.button>
+                                    <button onClick={() => { const r=QUICK[0].get(); setFromDate(r.from); setToDate(r.to); setApplied(r); setActiveQ('Today'); setSearch(''); setStatusFilter('All'); setShowFilter(false); }}
+                                        className="w-11 h-11 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                        <RotateCcw size={15} className="text-gray-500" strokeWidth={2.2} />
+                                    </button>
                                 </div>
                             </div>
-                        ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── Cards list ── */}
+                {isLoading ? (
+                    <div className="flex flex-col gap-3">
+                        {[1,2,3].map(i => <SkeletonCard key={i} />)}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '56px 20px', background: 'white', borderRadius: 18, border: '1.5px dashed #e5e7eb' }}>
-                        <div style={{ fontSize: 44, marginBottom: 12 }}>🏆</div>
-                        <p style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>No e-sale records</p>
-                        <p style={{ color: '#9ca3af', fontSize: 13 }}>No records for the selected date range.</p>
-                    </div>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+                        <div className="w-14 h-14 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center mx-auto mb-3">
+                            <TrendingUp size={24} className="text-violet-400" />
+                        </div>
+                        <p className="font-black text-gray-700 text-base mb-1">No data found</p>
+                        <p className="text-gray-400 text-sm">No records for the selected date range.</p>
+                    </motion.div>
                 ) : (
-                    <>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', marginBottom: 10 }}>
-                            {filtered.length} record{filtered.length !== 1 ? 's' : ''}
-                        </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {filtered.map((item, i) => {
-                                const qty   = parseFloat(item.Buyer_Quantal || 0);
-                                const avail = parseFloat(item.Balance || 0);
-                                const sold  = parseFloat(item.Sold || 0);
-                                const rate  = parseFloat(item.Sale_Rate || 0);
-                                const isSoldOut = avail <= 0;
-                                const isStopped = item.stop_resume_trading === 'Y';
-                                const isExpired = item.stop_resume_trading === 'E';
-                                return (
-                                    <motion.div key={item.tenderdetailid || i}
-                                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: Math.min(i * 0.05, 0.4) }}
-                                        style={{
-                                            background: isSoldOut ? '#f0fdf4' : isExpired ? '#fff5f5' : 'white',
-                                            borderRadius: 14,
-                                            padding: '14px 16px',
-                                            boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-                                            border: `1px solid ${isSoldOut ? '#bbf7d0' : isExpired ? '#fecaca' : '#f3f4f6'}`,
-                                        }}>
-                                        {/* Title row */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                                    <p style={{ fontWeight: 800, fontSize: 14, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {item.Ac_Name_E || item.Short_Name || 'Mill'}
-                                                    </p>
-                                                    {isSoldOut  && <span style={{ fontSize: 9, fontWeight: 800, background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>SOLD OUT</span>}
-                                                    {isStopped && !isSoldOut && <span style={{ fontSize: 9, fontWeight: 800, background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>STOPPED</span>}
-                                                    {isExpired  && <span style={{ fontSize: 9, fontWeight: 800, background: '#fee2e2', color: '#ef4444', padding: '1px 6px', borderRadius: 4, flexShrink: 0 }}>EXPIRED</span>}
-                                                </div>
-                                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                                                    {[item.gradeName, item.Packing ? `${item.Packing} Kg` : null, item.season].filter(Boolean).map((tag, j) => (
-                                                        <span key={j} style={{ fontSize: 10, fontWeight: 700, background: '#f3f4f6', color: '#6b7280', padding: '2px 7px', borderRadius: 5 }}>{tag}</span>
+                    <div className="flex flex-col gap-3">
+                        {filtered.map((item, i) => {
+                            const id     = item.tenderdetailid || i;
+                            const isOpen = expanded === id;
+                            const qty    = parseFloat(item.Buyer_Quantal || 0);
+                            const avail  = parseFloat(item.Balance || 0);
+                            const sold   = parseFloat(item.Sold || 0);
+                            const rate   = parseFloat(item.Sale_Rate || 0);
+                            const accent = cardAccent(item);
+
+                            return (
+                                <motion.div key={id}
+                                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: Math.min(i * 0.04, 0.35) }}
+                                    className="bg-white rounded-2xl overflow-hidden"
+                                    style={{
+                                        borderLeft: `4px solid ${accent}`,
+                                        border: `1px solid #f1f0f5`,
+                                        borderLeftWidth: 4,
+                                        borderLeftColor: accent,
+                                        boxShadow: '0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
+                                    }}>
+
+                                    {/* ── Card header — gradient tint + info ── */}
+                                    <div className="px-4 pt-4 pb-3"
+                                        style={{ background: `linear-gradient(135deg, ${accent}10 0%, ${accent}04 60%, transparent 100%)` }}>
+
+                                        {/* Name + Status badge row */}
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex-1 min-w-0 mr-3">
+                                                <p className="font-black text-[15px] text-gray-900 leading-tight truncate">
+                                                    {item.Ac_Name_E || item.Short_Name || 'Mill'}
+                                                </p>
+                                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                                    {[item.gradeName, item.Packing ? `${item.Packing}kg` : null, item.season].filter(Boolean).map((t, j) => (
+                                                        <span key={j} className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                                                            style={{ background: `${accent}15`, color: accent }}>
+                                                            {t}
+                                                        </span>
                                                     ))}
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                                                <button onClick={() => openEdit(item)}
-                                                    style={{ padding: '5px 10px', background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#7c3aed', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                                    ✏️ Edit
-                                                </button>
-                                                <button onClick={() => setDeleteItem(item)}
-                                                    style={{ padding: '5px 10px', background: '#fff1f0', border: '1px solid #fecaca', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#ef4444', cursor: 'pointer', fontFamily: 'inherit' }}>
-                                                    🗑
-                                                </button>
-                                            </div>
+                                            <StatusBadge item={item} />
                                         </div>
 
-                                        {/* 3 qty cards */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
+                                        {/* ── 3-column quantity stats ── */}
+                                        <div className="grid grid-cols-3 gap-2">
                                             {[
-                                                { label: 'Display Qty', value: qty.toFixed(2),   color: '#4338ca', bg: '#eef2ff' },
-                                                { label: 'Available',   value: avail.toFixed(2), color: '#16a34a', bg: '#f0fdf4' },
-                                                { label: 'Sold',        value: sold.toFixed(2),  color: '#d97706', bg: '#fffbeb' },
+                                                { label: 'Display Qty', value: fmtNum(qty),   color: accent,     bg: `${accent}12` },
+                                                { label: 'Available',   value: fmtNum(avail), color: '#16a34a',  bg: '#f0fdf4' },
+                                                { label: 'Sold',        value: fmtNum(sold),  color: '#d97706',  bg: '#fffbeb' },
                                             ].map(({ label, value, color, bg }) => (
-                                                <div key={label} style={{ background: bg, borderRadius: 8, padding: '7px 8px', textAlign: 'center' }}>
-                                                    <p style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', margin: '0 0 2px' }}>{label}</p>
-                                                    <p style={{ fontSize: 13, fontWeight: 900, color, margin: 0 }}>{value}</p>
+                                                <div key={label} className="rounded-xl py-2.5 px-2 text-center" style={{ background: bg }}>
+                                                    <p className="text-[15px] font-black leading-none mb-0.5" style={{ color }}>{value}</p>
+                                                    <p className="text-[8px] font-extrabold text-gray-400 uppercase tracking-wider">Qtl</p>
+                                                    <p className="text-[9px] text-gray-400 font-medium mt-0.5 leading-tight">{label}</p>
                                                 </div>
                                             ))}
                                         </div>
+                                    </div>
 
-                                        {/* Footer row */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <p style={{ fontSize: 13, fontWeight: 800, color: '#7c3aed', margin: 0 }}>
-                                                ₹{fmtAmt(rate)}/qtl
-                                            </p>
-                                            <p style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, margin: 0 }}>
-                                                {item.Tender_No ? `Tender #${item.Tender_No} · ` : ''}{fmtDate(item.Sauda_Date)}
+                                    {/* ── Footer: Rate + Edit/Delete + Expand ── */}
+                                    <div className="px-4 py-2.5 border-t flex items-center justify-between" style={{ borderColor: `${accent}20` }}>
+                                        <div>
+                                            <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-0.5">Sale Rate</p>
+                                            <p className="font-black text-[15px] leading-none" style={{ color: accent }}>
+                                                ₹{fmtAmt(rate)}
+                                                <span className="text-[10px] font-semibold text-gray-400 ml-1">/qtl</span>
                                             </p>
                                         </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
-                    </>
+
+                                        <div className="flex items-center gap-2">
+                                            {/* Edit pill button */}
+                                            <motion.button whileTap={{ scale: 0.93 }}
+                                                onClick={() => openEdit(item)}
+                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl"
+                                                style={{ background: '#f5f3ff', border: '1.5px solid #c4b5fd' }}>
+                                                <Pencil size={12} style={{ color: '#7c3aed' }} strokeWidth={2.5} />
+                                                <span className="text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>Edit</span>
+                                            </motion.button>
+                                            {/* Delete pill button */}
+                                            <motion.button whileTap={{ scale: 0.93 }}
+                                                onClick={() => setDeleteItem(item)}
+                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl"
+                                                style={{ background: '#fff1f0', border: '1.5px solid #fecaca' }}>
+                                                <Trash2 size={12} style={{ color: '#ef4444' }} strokeWidth={2.5} />
+                                                <span className="text-[11px] font-extrabold" style={{ color: '#ef4444' }}>Delete</span>
+                                            </motion.button>
+                                            {/* Expand toggle */}
+                                            <button onClick={() => setExpanded(isOpen ? null : id)}
+                                                className="w-8 h-8 rounded-xl flex items-center justify-center border"
+                                                style={{ background: isOpen ? `${accent}15` : '#f9fafb', borderColor: isOpen ? `${accent}40` : '#e5e7eb' }}>
+                                                <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                                    <ChevronDown size={14} style={{ color: isOpen ? accent : '#9ca3af' }} />
+                                                </motion.div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Expanded details ── */}
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div key="exp"
+                                                initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                                className="overflow-hidden">
+                                                <div className="px-4 pt-3 pb-4 border-t" style={{ background: `${accent}05`, borderColor: `${accent}15` }}>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {[
+                                                            { label: 'Tender No',    value: item.Tender_No ? `#${item.Tender_No}` : '—' },
+                                                            { label: 'Sauda Date',   value: fmtDate(item.Sauda_Date) },
+                                                            { label: 'Lifting Date', value: fmtDate(item.Lifting_Date) },
+                                                            { label: 'Total Value',  value: `₹${fmtAmt(rate * qty)}`, color: accent, bold: true },
+                                                        ].map(({ label, value, color, bold }) => (
+                                                            <div key={label} className="bg-white rounded-xl px-3 py-2.5 border border-gray-100">
+                                                                <p className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider mb-0.5">{label}</p>
+                                                                <p className="text-xs truncate" style={{ color: color || '#374151', fontWeight: bold ? 900 : 700 }}>{value}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
 
@@ -327,89 +548,84 @@ export default function MyESalesPage() {
                 {editItem && (
                     <>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            onClick={() => setEditItem(null)}
-                            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60 }} />
+                            onClick={() => setEditItem(null)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]" />
                         <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                            style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70, background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 20px 40px', maxHeight: '92vh', overflowY: 'auto', fontFamily: 'Signika, ui-sans-serif, system-ui, sans-serif' }}>
+                            className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl px-5 pt-4 pb-10 max-h-[92vh] overflow-y-auto">
 
-                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-                                <div style={{ width: 40, height: 4, borderRadius: 2, background: '#e5e7eb' }} />
+                            <div className="flex justify-center mb-4">
+                                <div className="w-10 h-1 rounded-full bg-gray-200" />
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                                <div>
-                                    <h3 style={{ fontWeight: 900, fontSize: 16, color: '#111827', margin: 0 }}>Edit eSale Sauda</h3>
-                                    <p style={{ fontSize: 12, color: '#6b7280', marginTop: 3, marginBottom: 0 }}>Update sauda details below</p>
+
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#ede9fe' }}>
+                                        <Pencil size={18} style={{ color: '#7c3aed' }} strokeWidth={2.5} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-base text-gray-900">Edit eSale Sauda</h3>
+                                        <p className="text-xs text-gray-400 mt-0.5">Update sauda details</p>
+                                    </div>
                                 </div>
                                 <button onClick={() => setEditItem(null)}
-                                    style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 18, color: '#6b7280' }}>×</button>
+                                    className="w-8 h-8 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-500 text-xl">×</button>
                             </div>
 
-                            {/* Read-only record info */}
-                            <div style={{ background: '#f9fafb', borderRadius: 12, padding: '12px 14px', marginBottom: 18 }}>
-                                <p style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>Record Info</p>
+                            <div className="bg-gray-50 rounded-2xl px-4 py-3.5 mb-5 border border-gray-100">
+                                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2.5">Record Info</p>
                                 {[
-                                    { label: 'Mill',          value: `${editItem.Ac_Name_E || ''}${editItem.Mill_Code ? ' · ' + editItem.Mill_Code : ''}` || '—' },
-                                    { label: 'Short Name',    value: editItem.Short_Name || '—' },
-                                    { label: 'Grade',         value: `${editItem.gradeName || '—'}${editItem.Packing ? ' (' + editItem.Packing + ' Kg)' : ''}` },
-                                    { label: 'Season',        value: editItem.season || '—' },
+                                    { label: 'Mill',   value: `${editItem.Ac_Name_E || ''}${editItem.Mill_Code ? ' · '+editItem.Mill_Code : ''}` || '—' },
+                                    { label: 'Grade',  value: `${editItem.gradeName || '—'}${editItem.Packing ? ' ('+editItem.Packing+' Kg)' : ''}` },
+                                    { label: 'Season', value: editItem.season || '—' },
                                 ].map(({ label, value }) => (
-                                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 6, marginBottom: 6, borderBottom: '1px solid #f3f4f6' }}>
-                                        <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', flexShrink: 0 }}>{label}</span>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#374151', textAlign: 'right', marginLeft: 12 }}>{value}</span>
+                                    <div key={label} className="flex justify-between py-2 border-b border-gray-100 last:border-0">
+                                        <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">{label}</span>
+                                        <span className="text-xs font-bold text-gray-700 text-right ml-3 max-w-[60%] truncate">{value}</span>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Sale Rate */}
-                            <div style={{ marginBottom: 14 }}>
-                                <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                                    Sale Rate (₹/qtl) <span style={{ color: '#ef4444' }}>*</span>
+                            <div className="mb-4">
+                                <label className="block text-[11px] font-extrabold text-gray-600 uppercase tracking-wider mb-2">
+                                    Sale Rate (₹/qtl) <span className="text-red-500">*</span>
                                 </label>
                                 <input type="number" value={editForm.Sale_Rate || ''} placeholder="0.00"
                                     disabled={editForm.from_software !== 'S'}
                                     onChange={e => setEditForm(f => ({ ...f, Sale_Rate: e.target.value }))}
-                                    onFocus={e => { if (editForm.from_software === 'S') { e.target.style.borderColor = '#7c3aed'; e.target.style.background = 'white'; } }}
-                                    onBlur={e => { e.target.style.borderColor = editErrors.Sale_Rate ? '#ef4444' : '#e5e7eb'; e.target.style.background = '#f9fafb'; }}
-                                    style={{ ...inputSt, borderColor: editErrors.Sale_Rate ? '#ef4444' : '#e5e7eb', opacity: editForm.from_software !== 'S' ? 0.55 : 1, cursor: editForm.from_software !== 'S' ? 'not-allowed' : 'text' }} />
-                                {editErrors.Sale_Rate && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 4, fontWeight: 600 }}>⚠ {editErrors.Sale_Rate}</p>}
-                                {editForm.from_software !== 'S' && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>Rate is not editable for this sauda type.</p>}
+                                    className="w-full px-4 py-3 bg-gray-50 border rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-violet-400 focus:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{ borderColor: editErrors.Sale_Rate ? '#ef4444' : '#e5e7eb' }} />
+                                {editErrors.Sale_Rate && <p className="text-xs text-red-500 mt-1.5 font-semibold">⚠ {editErrors.Sale_Rate}</p>}
+                                {editForm.from_software !== 'S' && <p className="text-xs text-gray-400 mt-1">Rate is not editable for this sauda type.</p>}
                             </div>
 
-                            {/* Buyer Quantal + Lifting Date */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                            <div className="grid grid-cols-2 gap-3 mb-6">
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                                        Buyer Qty (Qtl) <span style={{ color: '#ef4444' }}>*</span>
+                                    <label className="block text-[11px] font-extrabold text-gray-600 uppercase tracking-wider mb-2">
+                                        Buyer Qty (Qtl) <span className="text-red-500">*</span>
                                     </label>
                                     <input type="number" value={editForm.Buyer_Quantal || ''} placeholder="Multiple of 5" step="5" min="5"
                                         onChange={e => setEditForm(f => ({ ...f, Buyer_Quantal: e.target.value }))}
-                                        onFocus={e => { e.target.style.borderColor = '#7c3aed'; e.target.style.background = 'white'; }}
-                                        onBlur={e => { e.target.style.borderColor = editErrors.Buyer_Quantal ? '#ef4444' : '#e5e7eb'; e.target.style.background = '#f9fafb'; }}
-                                        style={{ ...inputSt, borderColor: editErrors.Buyer_Quantal ? '#ef4444' : '#e5e7eb' }} />
-                                    {editErrors.Buyer_Quantal && <p style={{ fontSize: 11, color: '#ef4444', marginTop: 4, fontWeight: 600 }}>⚠ {editErrors.Buyer_Quantal}</p>}
-                                    <p style={{ fontSize: 10, color: '#9ca3af', marginTop: 3, marginBottom: 0 }}>Multiples of 5 only</p>
+                                        className="w-full px-4 py-3 bg-gray-50 border rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-violet-400 focus:bg-white transition-all"
+                                        style={{ borderColor: editErrors.Buyer_Quantal ? '#ef4444' : '#e5e7eb' }} />
+                                    {editErrors.Buyer_Quantal && <p className="text-xs text-red-500 mt-1.5 font-semibold">⚠ {editErrors.Buyer_Quantal}</p>}
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 10, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Lifting Date</label>
+                                    <label className="block text-[11px] font-extrabold text-gray-600 uppercase tracking-wider mb-2">Lifting Date</label>
                                     <input type="date" value={editForm.Lifting_Date || ''}
                                         onChange={e => setEditForm(f => ({ ...f, Lifting_Date: e.target.value }))}
-                                        onFocus={e => { e.target.style.borderColor = '#7c3aed'; e.target.style.background = 'white'; }}
-                                        onBlur={e => { e.target.style.borderColor = '#e5e7eb'; e.target.style.background = '#f9fafb'; }}
-                                        style={inputSt} />
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-violet-400 focus:bg-white transition-all" />
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
+                            <div className="grid grid-cols-2 gap-3">
                                 <button onClick={() => setEditItem(null)}
-                                    style={{ padding: '14px', background: '#f3f4f6', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                    className="py-3.5 rounded-2xl bg-gray-100 text-sm font-bold text-gray-700 border border-gray-200">
                                     Cancel
                                 </button>
                                 <motion.button whileTap={{ scale: 0.97 }} onClick={handleEditSave} disabled={isUpdating}
-                                    style={{ padding: '14px', background: isUpdating ? '#c4b5fd' : 'linear-gradient(135deg,#7c3aed,#6d28d9)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 800, color: 'white', cursor: isUpdating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                    {isUpdating
-                                        ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />Saving…</>
-                                        : '💾 Save Changes'}
+                                    className="py-3.5 rounded-2xl text-sm font-extrabold text-white flex items-center justify-center gap-2"
+                                    style={{ background: isUpdating ? '#c4b5fd' : 'linear-gradient(135deg,#7c3aed,#6d28d9)', cursor: isUpdating ? 'not-allowed' : 'pointer', boxShadow: isUpdating ? 'none' : '0 4px 14px rgba(124,58,237,0.28)' }}>
+                                    {isUpdating ? <><Spinner />Saving…</> : '💾 Save Changes'}
                                 </motion.button>
                             </div>
                         </motion.div>
@@ -417,55 +633,63 @@ export default function MyESalesPage() {
                 )}
             </AnimatePresence>
 
-            {/* ── Delete confirmation ── */}
+            {/* ── Delete confirm modal ── */}
             <AnimatePresence>
                 {deleteItem && (
                     <>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            onClick={() => setDeleteItem(null)}
-                            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60 }} />
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                            style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 70, background: 'white', borderRadius: 20, padding: '24px 20px', width: 'calc(100% - 48px)', maxWidth: 360, fontFamily: 'Signika, ui-sans-serif, system-ui, sans-serif' }}>
+                            onClick={() => setDeleteItem(null)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]" />
+                        <motion.div initial={{ opacity: 0, scale: 0.88, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.88, y: 20 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] bg-white rounded-3xl p-6 w-[calc(100%-40px)] max-w-sm"
+                            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
                             {(() => {
                                 const hasSold = parseFloat(deleteItem.Sold || 0) > 0;
                                 return (
                                     <>
-                                        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                                            <div style={{ fontSize: 40, marginBottom: 8 }}>{hasSold ? '⚠️' : '🗑️'}</div>
-                                            <h3 style={{ fontWeight: 900, fontSize: 16, color: '#111827', marginBottom: 4 }}>
-                                                {hasSold ? 'Partially Sold Sauda' : 'Delete Sauda?'}
-                                            </h3>
-                                            <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>This action cannot be undone</p>
+                                        <div className="flex justify-center mb-4">
+                                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                                                style={{ background: hasSold ? '#fef3c7' : '#fff1f0' }}>
+                                                {hasSold
+                                                    ? <span className="text-3xl">⚠️</span>
+                                                    : <Trash2 size={26} style={{ color: '#ef4444' }} strokeWidth={2} />}
+                                            </div>
                                         </div>
-                                        <div style={{ background: '#f9fafb', borderRadius: 12, padding: '10px 14px', marginBottom: 14 }}>
+                                        <h3 className="font-black text-base text-gray-900 text-center mb-1">
+                                            {hasSold ? 'Partially Sold Sauda' : 'Delete Sauda?'}
+                                        </h3>
+                                        <p className="text-xs text-gray-400 text-center mb-4">This action cannot be undone</p>
+
+                                        <div className="bg-gray-50 rounded-2xl px-4 py-3 mb-4 border border-gray-100">
                                             {[
-                                                { label: 'Mill',        value: deleteItem.Ac_Name_E || deleteItem.Short_Name || '—' },
-                                                { label: 'Grade · Season', value: `${deleteItem.gradeName || '—'} · ${deleteItem.season || '—'}` },
-                                                { label: 'Total Qty',   value: `${parseFloat(deleteItem.Buyer_Quantal || 0).toFixed(2)} Qtl` },
+                                                { label: 'Mill',       value: deleteItem.Ac_Name_E || '—' },
+                                                { label: 'Grade',      value: `${deleteItem.gradeName || '—'} · ${deleteItem.season || '—'}` },
+                                                { label: 'Total Qty',  value: `${parseFloat(deleteItem.Buyer_Quantal||0).toFixed(2)} Qtl` },
                                                 ...(hasSold ? [{ label: 'Already Sold', value: `${parseFloat(deleteItem.Sold).toFixed(2)} Qtl`, warn: true }] : []),
                                             ].map(({ label, value, warn }) => (
-                                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 6, marginBottom: 6, borderBottom: '1px solid #f3f4f6' }}>
-                                                    <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>{label}</span>
-                                                    <span style={{ fontSize: 12, fontWeight: 700, color: warn ? '#d97706' : '#374151' }}>{value}</span>
+                                                <div key={label} className="flex justify-between py-1.5 border-b border-gray-100 last:border-0">
+                                                    <span className="text-[11px] text-gray-400 font-semibold">{label}</span>
+                                                    <span className="text-xs font-bold" style={{ color: warn ? '#d97706' : '#374151' }}>{value}</span>
                                                 </div>
                                             ))}
                                         </div>
-                                        <p style={{ fontSize: 13, color: '#6b7280', fontWeight: 500, marginBottom: 16, textAlign: 'center', lineHeight: 1.5 }}>
-                                            {hasSold
-                                                ? <><strong style={{ color: '#d97706' }}>{parseFloat(deleteItem.Sold).toFixed(2)} Qtl</strong> already sold. Record will be reduced to sold quantity; unsold stock will be released.</>
-                                                : 'Are you sure you want to permanently delete this eSale record?'}
-                                        </p>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+
+                                        {hasSold && (
+                                            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-4 text-center leading-relaxed">
+                                                <strong>{parseFloat(deleteItem.Sold).toFixed(2)} Qtl</strong> already sold. Record will be reduced to sold quantity; unsold stock released.
+                                            </p>
+                                        )}
+
+                                        <div className="grid grid-cols-2 gap-2.5">
                                             <button onClick={() => setDeleteItem(null)}
-                                                style={{ padding: '12px', background: '#f3f4f6', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 700, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                                className="py-3.5 rounded-2xl bg-gray-100 text-sm font-bold text-gray-700 border border-gray-200">
                                                 Cancel
                                             </button>
-                                            <button onClick={handleDelete} disabled={isDeleting}
-                                                style={{ padding: '12px', background: isDeleting ? '#fca5a5' : hasSold ? '#f59e0b' : '#ef4444', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 800, color: 'white', cursor: isDeleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                                                {isDeleting
-                                                    ? <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />…</>
-                                                    : hasSold ? 'Reduce & Delete' : '🗑 Delete'}
-                                            </button>
+                                            <motion.button whileTap={{ scale: 0.96 }} onClick={handleDelete} disabled={isDeleting}
+                                                className="py-3.5 rounded-2xl text-sm font-extrabold text-white flex items-center justify-center gap-2"
+                                                style={{ background: isDeleting ? '#fca5a5' : hasSold ? '#f59e0b' : '#ef4444', cursor: isDeleting ? 'not-allowed' : 'pointer' }}>
+                                                {isDeleting ? <><Spinner size={14} />Deleting…</> : hasSold ? 'Reduce & Delete' : '🗑 Delete'}
+                                            </motion.button>
                                         </div>
                                     </>
                                 );
@@ -474,11 +698,6 @@ export default function MyESalesPage() {
                     </>
                 )}
             </AnimatePresence>
-
-            <style>{`
-                @keyframes spin { to { transform: rotate(360deg); } }
-                @keyframes wsping { 0%,100% { opacity: 1; box-shadow: 0 0 6px #4ade80; } 50% { opacity: 0.45; box-shadow: 0 0 3px #4ade80; } }
-            `}</style>
         </AppLayout>
     );
 }

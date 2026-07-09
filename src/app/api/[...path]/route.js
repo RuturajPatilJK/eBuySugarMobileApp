@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const BACKEND = 'https://trading-api.ebuysugar.com';
+const BACKEND = process.env.BACKEND_URL || 'https://trading-api.ebuysugar.com';
 
 // Headers that must not be forwarded to the upstream server
 const HOP_BY_HOP = new Set([
