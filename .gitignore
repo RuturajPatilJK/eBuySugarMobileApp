@@ -1,1 +1,13 @@
-node_modules
+# Exclude node_modules directory
+node_modules/
+CLAUDE.md
+
+# Exclude logs and other generated files
+*.log
+*.lock
+.DS_Store
+
+# Exclude editor-specific files
+.vscode/
+.idea/
+*.bak
