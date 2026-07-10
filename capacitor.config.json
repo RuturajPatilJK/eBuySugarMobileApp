@@ -1,0 +1,12 @@
+{
+  "appId": "com.ebuysugar.mobile",
+  "appName": "eBuySugar",
+  "webDir": "out",
+  "server": {
+    "url": "http://192.168.1.50:3001",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

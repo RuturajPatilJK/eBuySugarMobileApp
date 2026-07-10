@@ -7,10 +7,16 @@ import {
     UserCog, Settings2, MessageSquare, Truck, Link2, ScrollText,
     ShieldCheck, BarChart3, LogOut, ChevronRight, ArrowLeft,
     Menu, LayoutDashboard, Package, FileText, Bell, Star,
+    Clock, RotateCcw, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { useGetMeQuery, useLogoutMutation } from '../../services/authApi';
 import { clearAuth } from '../../store/authSlice';
 import { useGetMyDocumentsQuery } from '../../services/userDocumentsApi';
+import {
+    useGetMyComplaintsQuery,
+    useMarkAsReadMutation,
+    useMarkAllAsReadMutation,
+} from '../../services/grievanceApi';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const COMPANY_CODE = parseInt(process.env.NEXT_PUBLIC_COMPANY_CODE) || 4;
@@ -56,7 +62,14 @@ export default function MobileHeader({ title, showBack = false }) {
     const [logout]                    = useLogoutMutation();
     const { accounts, currentAccoid } = useSelector(s => s.auth);
     const [open, setOpen]             = useState(false);
+    const [openNotif, setOpenNotif]   = useState(false);
     const { data: docsRes }           = useGetMyDocumentsQuery(COMPANY_CODE, { skip: !user });
+    const { data: complaints = [] }   = useGetMyComplaintsQuery(undefined, { skip: !user });
+    const [markAsRead]                = useMarkAsReadMutation();
+    const [markAllAsRead]             = useMarkAllAsReadMutation();
+
+    const unreadNotifs  = complaints.filter(c => c.is_unread);
+    const unreadCount   = unreadNotifs.length;
 
     const handleLogout = async () => {
         setOpen(false);
@@ -124,6 +137,31 @@ export default function MobileHeader({ title, showBack = false }) {
                         </div>
                     </div>
 
+                    {/* Bell */}
+                    <button onClick={() => setOpenNotif(true)} style={{
+                        position: 'relative', width: 36, height: 36, borderRadius: 10,
+                        background: unreadCount > 0 ? '#fff1f0' : '#f8fafc',
+                        border: `1px solid ${unreadCount > 0 ? '#fecaca' : '#e2e8f0'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', flexShrink: 0,
+                        WebkitTapHighlightColor: 'transparent',
+                    }}>
+                        <Bell size={18} color={unreadCount > 0 ? '#ef3837' : '#6b7280'} strokeWidth={2} />
+                        {unreadCount > 0 && (
+                            <span style={{
+                                position: 'absolute', top: -4, right: -4,
+                                background: '#ef3837', color: 'white',
+                                fontSize: 9, fontWeight: 900, lineHeight: 1,
+                                padding: '2px 4px', borderRadius: 8,
+                                border: '1.5px solid white',
+                                fontFamily: 'Signika, sans-serif',
+                                minWidth: 16, textAlign: 'center',
+                            }}>
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
+
                     {/* Right: avatar */}
                     <button onClick={() => setOpen(true)} style={{
                         width: 36, height: 36, borderRadius: '50%',
@@ -141,6 +179,179 @@ export default function MobileHeader({ title, showBack = false }) {
                     </button>
                 </div>
             </header>
+
+            {/* ── Notification Panel ── */}
+            <AnimatePresence>
+                {openNotif && (
+                    <>
+                        <motion.div key="notif-bg"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={() => setOpenNotif(false)}
+                            style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)' }}
+                        />
+                        <motion.div key="notif-panel"
+                            initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                            style={{
+                                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70,
+                                background: 'white', borderRadius: '24px 24px 0 0',
+                                maxHeight: '75vh', display: 'flex', flexDirection: 'column',
+                                paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+                            }}
+                        >
+                            {/* Handle */}
+                            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4, flexShrink: 0 }}>
+                                <div style={{ width: 40, height: 4, borderRadius: 4, background: '#e2e8f0' }} />
+                            </div>
+
+                            {/* Notif header */}
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '10px 16px 12px', borderBottom: '1px solid #f1f5f9', flexShrink: 0,
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <div style={{
+                                        width: 34, height: 34, borderRadius: 10, background: '#fff1f0',
+                                        border: '1px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <Bell size={16} color="#ef3837" strokeWidth={2} />
+                                    </div>
+                                    <div>
+                                        <p style={{ fontWeight: 900, fontSize: 14, color: '#111827', margin: 0, fontFamily: 'Signika, sans-serif' }}>
+                                            Notifications
+                                        </p>
+                                        <p style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500, margin: 0, fontFamily: 'Signika, sans-serif' }}>
+                                            {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    {unreadCount > 0 && (
+                                        <button onClick={() => markAllAsRead()} style={{
+                                            padding: '6px 12px', borderRadius: 10, border: '1px solid #e2e8f0',
+                                            background: '#f8fafc', fontSize: 11, fontWeight: 700, color: '#374151',
+                                            cursor: 'pointer', fontFamily: 'Signika, sans-serif',
+                                        }}>
+                                            ✓ Mark all read
+                                        </button>
+                                    )}
+                                    <button onClick={() => setOpenNotif(false)} style={{
+                                        width: 30, height: 30, borderRadius: 8, border: '1px solid #e2e8f0',
+                                        background: '#f8fafc', fontSize: 16, color: '#6b7280', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>×</button>
+                                </div>
+                            </div>
+
+                            {/* Notif list */}
+                            <div style={{ flex: 1, overflowY: 'auto' }}>
+                                {complaints.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                        <div style={{
+                                            width: 52, height: 52, borderRadius: 16, background: '#f8fafc',
+                                            border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            margin: '0 auto 12px',
+                                        }}>
+                                            <Bell size={22} color="#9ca3af" strokeWidth={1.5} />
+                                        </div>
+                                        <p style={{ fontWeight: 700, fontSize: 13, color: '#374151', margin: '0 0 4px', fontFamily: 'Signika, sans-serif' }}>
+                                            No notifications
+                                        </p>
+                                        <p style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500, fontFamily: 'Signika, sans-serif' }}>
+                                            You'll see grievance updates here
+                                        </p>
+                                    </div>
+                                ) : (
+                                    complaints.map((c) => {
+                                        const statusColor = c.status === 'Open' ? '#f97316' : c.status === 'In Progress' ? '#3b82f6' : c.status === 'Resolved' ? '#22c55e' : '#94a3b8';
+                                        const lastReply = (() => {
+                                            try {
+                                                const reps = Array.isArray(c.replies) ? c.replies : JSON.parse(c.replies || '[]');
+                                                const adminReplies = reps.filter(r => r.role === 'admin');
+                                                return adminReplies[adminReplies.length - 1] || null;
+                                            } catch { return null; }
+                                        })();
+                                        return (
+                                            <div key={c.grievance_id}
+                                                onClick={() => { setOpenNotif(false); router.push('/grievances'); }}
+                                                style={{
+                                                    display: 'flex', gap: 12, padding: '14px 16px',
+                                                    borderBottom: '1px solid #f8fafc', cursor: 'pointer',
+                                                    background: c.is_unread ? '#fff9f9' : 'white',
+                                                    alignItems: 'flex-start',
+                                                    borderLeft: `3px solid ${c.is_unread ? '#ef3837' : 'transparent'}`,
+                                                }}
+                                            >
+                                                {/* Dot */}
+                                                <div style={{ paddingTop: 3, flexShrink: 0 }}>
+                                                    {c.is_unread
+                                                        ? <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef3837' }} />
+                                                        : <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e2e8f0' }} />
+                                                    }
+                                                </div>
+
+                                                {/* Text */}
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4, marginBottom: 3 }}>
+                                                        <p style={{ fontWeight: 800, fontSize: 12, color: '#111827', margin: 0, fontFamily: 'Signika, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {c.subject}
+                                                        </p>
+                                                        <span style={{
+                                                            fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 20,
+                                                            background: `${statusColor}18`, color: statusColor, flexShrink: 0,
+                                                            fontFamily: 'Signika, sans-serif',
+                                                        }}>
+                                                            {c.status}
+                                                        </span>
+                                                    </div>
+                                                    <p style={{ fontSize: 11, color: '#6b7280', fontWeight: 500, margin: '0 0 4px', fontFamily: 'Signika, sans-serif' }}>
+                                                        {lastReply ? `Admin: ${lastReply.message.slice(0, 60)}${lastReply.message.length > 60 ? '…' : ''}` : c.category}
+                                                    </p>
+                                                    <p style={{ fontSize: 10, color: '#ef3837', fontWeight: 700, margin: 0, fontFamily: 'Signika, sans-serif' }}>
+                                                        {c.ticket_no}
+                                                    </p>
+                                                </div>
+
+                                                {/* Mark read */}
+                                                {c.is_unread && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); markAsRead(c.grievance_id); }}
+                                                        style={{
+                                                            flexShrink: 0, padding: '5px 10px', borderRadius: 8,
+                                                            border: '1px solid #e2e8f0', background: '#f8fafc',
+                                                            fontSize: 10, fontWeight: 700, color: '#374151', cursor: 'pointer',
+                                                            fontFamily: 'Signika, sans-serif', whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        ✓ Read
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div style={{ padding: '12px 16px 0', borderTop: '1px solid #f1f5f9', flexShrink: 0 }}>
+                                <button
+                                    onClick={() => { setOpenNotif(false); router.push('/grievances'); }}
+                                    style={{
+                                        width: '100%', padding: '12px', borderRadius: 14, cursor: 'pointer',
+                                        background: 'linear-gradient(135deg,#ef3837,#d92300)',
+                                        border: 'none', fontFamily: 'Signika, sans-serif',
+                                        boxShadow: '0 3px 10px rgba(239,56,55,0.25)',
+                                        color: 'white', fontWeight: 800, fontSize: 13,
+                                    }}
+                                >
+                                    View All Grievances
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* ── Sidebar Drawer ── */}
             <AnimatePresence>

@@ -13,10 +13,10 @@ import {
 import { useGetMeQuery } from '../../services/authApi';
 import { useGetMyAccountQuery } from '../../services/accountMasterApi';
 import GstAccountPicker from '../../components/GstAccountPicker';
-import { SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw, Search, X } from 'lucide-react';
 
 const COMPANY_CODE = parseInt(process.env.NEXT_PUBLIC_COMPANY_CODE) || 4;
-const YEAR_CODE    = parseInt(process.env.NEXT_PUBLIC_YEAR_CODE)    || 1;
+const YEAR_CODE = parseInt(process.env.NEXT_PUBLIC_YEAR_CODE) || 1;
 
 const fmtDate = (v) => {
     if (!v) return '—';
@@ -39,7 +39,7 @@ const toApiDate = (v) => {
 };
 const fmtQty = (v) => parseFloat(v || 0).toFixed(2);
 const gradeFirst = (v) => v ? v.split(' - ')[0].trim() : '—';
-const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const dmy = (s) => { if (!s) return '—'; const [y, m, d] = s.split('-'); return `${d}-${m}-${y}`; };
 
 const inputStyle = {
@@ -226,8 +226,34 @@ export default function MyOrdersPage() {
     const [editShipTo, setEditShipTo] = useState(null);
     const [editBillShipSame, setEditBillShipSame] = useState(false);
 
+    const [search, setSearch] = useState('');
+
     const pendingCnt = orders.filter(o => parseFloat(o.BALANCE || 0) > 0).length;
     const totalQty = useMemo(() => orders.reduce((s, o) => s + parseFloat(o.Buyer_Quantal || 0), 0), [orders]);
+
+    const filteredOrders = useMemo(() => {
+        if (!search.trim()) return orders;
+        const q = search.toLowerCase().trim();
+        return orders.filter(o =>
+            (o.millshortname || '').toLowerCase().includes(q) ||
+            String(o.Mill_Code || '').toLowerCase().includes(q) ||
+            (o.Grade || '').toLowerCase().includes(q) ||
+            (o.season || '').toLowerCase().includes(q) ||
+            fmtDate(o.Sauda_Date).includes(q)
+        );
+    }, [orders, search]);
+
+    const filteredDOs = useMemo(() => {
+        if (!search.trim()) return pendingDOs;
+        const q = search.toLowerCase().trim();
+        return pendingDOs.filter(o =>
+            (o.mill_short || o.mill_name || '').toLowerCase().includes(q) ||
+            (o.Grade || '').toLowerCase().includes(q) ||
+            String(o.pendingDoid || '').includes(q) ||
+            (o.TruckNo || '').toLowerCase().includes(q) ||
+            (o.DriverMobileNo || '').includes(q)
+        );
+    }, [pendingDOs, search]);
 
     const showDoToast = (msg, type = 'error') => {
         setDoToast({ show: true, message: msg, type });
@@ -235,14 +261,14 @@ export default function MyOrdersPage() {
     };
 
     const buildAccountFromMyAccount = (acc) => acc ? {
-        Ac_Code:      acc.Ac_Code,
-        accoid:       acc.accoid,
-        Ac_Name_E:    acc.Ac_Name_E,
-        Gst_No:       acc.Gst_No       || null,
-        cityname:     acc.cityname      || null,
-        State_Name:   acc.State_Name    || null,
-        Address_E:    acc.Address_E     || null,
-        GSTStateCode: acc.GSTStateCode  || null,
+        Ac_Code: acc.Ac_Code,
+        accoid: acc.accoid,
+        Ac_Name_E: acc.Ac_Name_E,
+        Gst_No: acc.Gst_No || null,
+        cityname: acc.cityname || null,
+        State_Name: acc.State_Name || null,
+        Address_E: acc.Address_E || null,
+        GSTStateCode: acc.GSTStateCode || null,
     } : null;
 
     const handleBillToSelect = (account) => {
@@ -288,15 +314,15 @@ export default function MyOrdersPage() {
         setEditDOErrors({});
         try {
             await updateDO({
-                pendingDoid:      editDOItem.pendingDoid,
-                Lifting_Quintal:  lq,
-                TruckNo:          editDOForm.TruckNo || '',
-                DriverMobileNo:   editDOForm.DriverMobileNo || '',
-                DOc_Date:         editDOForm.DOc_Date,
-                BillTo_Ac_Code:   editBillTo?.Ac_Code  ?? null,
-                BillTo_Accoid:    editBillTo?.accoid    ?? null,
-                ShipTo_Ac_Code:   editShipTo?.Ac_Code  ?? null,
-                ShipTo_Accoid:    editShipTo?.accoid    ?? null,
+                pendingDoid: editDOItem.pendingDoid,
+                Lifting_Quintal: lq,
+                TruckNo: editDOForm.TruckNo || '',
+                DriverMobileNo: editDOForm.DriverMobileNo || '',
+                DOc_Date: editDOForm.DOc_Date,
+                BillTo_Ac_Code: editBillTo?.Ac_Code ?? null,
+                BillTo_Accoid: editBillTo?.accoid ?? null,
+                ShipTo_Ac_Code: editShipTo?.Ac_Code ?? null,
+                ShipTo_Accoid: editShipTo?.accoid ?? null,
             }).unwrap();
             setEditDOItem(null);
             showDoToast('Delivery Order updated!', 'success');
@@ -374,10 +400,10 @@ export default function MyOrdersPage() {
             DriverMobileNo: doForm.DriverMobileNo.trim() || '',
             Payment_Details: doForm.Payment_Details.trim() || '',
             target_buyer_code: myAccount?.Ac_Code || '',
-            BillTo_Ac_Code:    billTo?.Ac_Code  ?? myAccount?.Ac_Code ?? '',
-            BillTo_Accoid:     billTo?.accoid    ?? myAccount?.accoid  ?? 0,
-            ShipTo_Ac_Code:    shipTo?.Ac_Code  ?? myAccount?.Ac_Code ?? '',
-            ShipTo_Accoid:     shipTo?.accoid    ?? myAccount?.accoid  ?? 0,
+            BillTo_Ac_Code: billTo?.Ac_Code ?? myAccount?.Ac_Code ?? '',
+            BillTo_Accoid: billTo?.accoid ?? myAccount?.accoid ?? 0,
+            ShipTo_Ac_Code: shipTo?.Ac_Code ?? myAccount?.Ac_Code ?? '',
+            ShipTo_Accoid: shipTo?.accoid ?? myAccount?.accoid ?? 0,
         };
 
         try {
@@ -398,7 +424,7 @@ export default function MyOrdersPage() {
             <AnimatePresence>
                 {doToast.show && (
                     <motion.div initial={{ opacity: 0, y: -60 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -60 }}
-                        style={{ position: 'fixed', top: 72, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 20px', borderRadius: 14, fontWeight: 700, fontSize: 14, background: doToast.type === 'success' ? '#059669' : '#ef4444', color: 'white', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>
+                        style={{ position: 'fixed', top: 72, left: 16, right: 16, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '13px 20px', borderRadius: 14, fontWeight: 700, fontSize: 14, background: doToast.type === 'success' ? '#059669' : '#ef4444', color: 'white', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', textAlign: 'center' }}>
                         {doToast.type === 'success' ? '✓' : '✕'} {doToast.message}
                     </motion.div>
                 )}
@@ -419,6 +445,26 @@ export default function MyOrdersPage() {
                     ))}
                 </div>
 
+                {/* Search bar */}
+                <div style={{ position: 'relative', marginBottom: 14 }}>
+                    <Search size={15} color="#9ca3af" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder={tab === 'orders' ? 'Search mill, grade, season…' : 'Search mill, grade, truck, DO#…'}
+                        style={{ width: '100%', padding: '11px 36px 11px 36px', background: 'white', border: '1.5px solid #e5e7eb', borderRadius: 12, fontSize: 13, fontWeight: 600, color: '#111827', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+                        onFocus={e => { e.target.style.borderColor = '#ef3837'; }}
+                        onBlur={e => { e.target.style.borderColor = '#e5e7eb'; }}
+                    />
+                    {search && (
+                        <button onClick={() => setSearch('')}
+                            style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: '#f3f4f6', border: 'none', borderRadius: 6, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                            <X size={12} color="#6b7280" />
+                        </button>
+                    )}
+                </div>
+
                 {/* ── My Orders tab ── */}
                 {tab === 'orders' && (
                     <>
@@ -437,23 +483,6 @@ export default function MyOrdersPage() {
                             </div>
                         )}
 
-                        {!ordersLoading && orders.length > 0 && (
-                            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                                <div style={{ flex: 1, background: 'white', borderRadius: 12, padding: '10px 14px', border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                                    <p style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 2 }}>Total Orders</p>
-                                    <p style={{ fontWeight: 900, fontSize: 18, color: '#111827' }}>{orders.length}</p>
-                                </div>
-                                <div style={{ flex: 1, background: 'white', borderRadius: 12, padding: '10px 14px', border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                                    <p style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 2 }}>Total Qty</p>
-                                    <p style={{ fontWeight: 900, fontSize: 18, color: '#2563eb' }}>{fmtQty(totalQty)} qtl</p>
-                                </div>
-                                <div style={{ flex: 1, background: 'white', borderRadius: 12, padding: '10px 14px', border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                                    <p style={{ fontSize: 9, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 2 }}>Pending</p>
-                                    <p style={{ fontWeight: 900, fontSize: 18, color: '#c2410c' }}>{pendingCnt}</p>
-                                </div>
-                            </div>
-                        )}
-
                         {ordersLoading ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {[1, 2, 3].map(i => (
@@ -461,24 +490,25 @@ export default function MyOrdersPage() {
                                         <div className="skeleton" style={{ height: 16, width: '55%', marginBottom: 8 }} />
                                         <div className="skeleton" style={{ height: 12, width: '35%', marginBottom: 14 }} />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
-                                            {[1,2,3,4,5].map(j => <div key={j} className="skeleton" style={{ height: 40, borderRadius: 8 }} />)}
+                                            {[1, 2, 3, 4, 5].map(j => <div key={j} className="skeleton" style={{ height: 40, borderRadius: 8 }} />)}
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        ) : orders.length === 0 ? (
+                        ) : filteredOrders.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                                <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-                                <p style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>No orders found</p>
-                                <p style={{ color: '#9ca3af', fontSize: 13 }}>Your orders will appear here after purchase.</p>
+                                <div style={{ fontSize: 48, marginBottom: 12 }}>{search ? '🔍' : '📭'}</div>
+                                <p style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>{search ? 'No matching orders' : 'No orders found'}</p>
+                                <p style={{ color: '#9ca3af', fontSize: 13 }}>{search ? `No orders match "${search}"` : 'Your orders will appear here after purchase.'}</p>
                             </div>
                         ) : (
                             <>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                                    <p style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>{orders.length} order{orders.length !== 1 ? 's' : ''}</p>
-                                    <button onClick={refetchOrders} style={{ background: 'none', border: 'none', color: '#ef3837', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>↻ Refresh</button>
+                                    <p style={{ fontSize: 12, color: '#6b7280', fontWeight: 600 }}>
+                                        {filteredOrders.length}{search && filteredOrders.length !== orders.length ? ` of ${orders.length}` : ''} order{filteredOrders.length !== 1 ? 's' : ''}
+                                    </p>
                                 </div>
-                                {orders.map((order, i) => <OrderCard key={order.tenderdetailid ?? i} order={order} index={i} onCreateDO={handleOpenDO} />)}
+                                {filteredOrders.map((order, i) => <OrderCard key={order.tenderdetailid ?? i} order={order} index={i} onCreateDO={handleOpenDO} />)}
                             </>
                         )}
                     </>
@@ -511,10 +541,10 @@ export default function MyOrdersPage() {
                                     <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px', border: '1px solid #f3f4f6', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
                                         <div style={{ display: 'flex', gap: 6, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
                                             {[
-                                                { label: 'Today',      from: todayStr(), to: todayStr() },
-                                                { label: 'This Week',  from: (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(), to: todayStr() },
-                                                { label: 'This Month', from: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`; })(), to: todayStr() },
-                                                { label: 'Last Month', from: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth()-1, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; })(), to: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth(), 0); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() },
+                                                { label: 'Today', from: todayStr(), to: todayStr() },
+                                                { label: 'This Week', from: (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(), to: todayStr() },
+                                                { label: 'This Month', from: (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`; })(), to: todayStr() },
+                                                { label: 'Last Month', from: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })(), to: (() => { const d = new Date(new Date().getFullYear(), new Date().getMonth(), 0); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })() },
                                             ].map(p => (
                                                 <button key={p.label} onClick={() => { setDoPendingDate({ from: p.from, to: p.to }); setActiveDoPreset(p.label); }}
                                                     style={{ flexShrink: 0, padding: '6px 13px', background: activeDoPreset === p.label ? '#ef3837' : '#f3f4f6', border: `1.5px solid ${activeDoPreset === p.label ? '#ef3837' : 'transparent'}`, borderRadius: 20, fontSize: 11, fontWeight: 700, color: activeDoPreset === p.label ? 'white' : '#374151', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', boxShadow: activeDoPreset === p.label ? '0 3px 10px rgba(239,56,55,0.25)' : 'none' }}>
@@ -548,21 +578,23 @@ export default function MyOrdersPage() {
                                         <div className="skeleton" style={{ height: 16, width: '55%', marginBottom: 8 }} />
                                         <div className="skeleton" style={{ height: 12, width: '35%', marginBottom: 14 }} />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
-                                            {[1,2,3].map(j => <div key={j} className="skeleton" style={{ height: 40, borderRadius: 8 }} />)}
+                                            {[1, 2, 3].map(j => <div key={j} className="skeleton" style={{ height: 40, borderRadius: 8 }} />)}
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        ) : pendingDOs.length === 0 ? (
+                        ) : filteredDOs.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: 20, border: '1.5px dashed #e5e7eb' }}>
-                                <div style={{ fontSize: 48, marginBottom: 12 }}>🚚</div>
-                                <p style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>No pending DOs</p>
-                                <p style={{ color: '#9ca3af', fontSize: 13 }}>No delivery orders found for the selected period.</p>
+                                <div style={{ fontSize: 48, marginBottom: 12 }}>{search ? '🔍' : '🚚'}</div>
+                                <p style={{ fontWeight: 700, color: '#374151', marginBottom: 4 }}>{search ? 'No matching DOs' : 'No pending DOs'}</p>
+                                <p style={{ color: '#9ca3af', fontSize: 13 }}>{search ? `No delivery orders match "${search}"` : 'No delivery orders found for the selected period.'}</p>
                             </div>
                         ) : (
                             <>
-                                <p style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, marginBottom: 10 }}>{pendingDOs.length} delivery order{pendingDOs.length !== 1 ? 's' : ''}</p>
-                                {pendingDOs.map((order, i) => <PendingDOCard key={order.pendingDoid ?? i} order={order} index={i} onEdit={openEditDO} onDelete={setDeleteDOItem} />)}
+                                <p style={{ fontSize: 12, color: '#6b7280', fontWeight: 600, marginBottom: 10 }}>
+                                    {filteredDOs.length}{search && filteredDOs.length !== pendingDOs.length ? ` of ${pendingDOs.length}` : ''} delivery order{filteredDOs.length !== 1 ? 's' : ''}
+                                </p>
+                                {filteredDOs.map((order, i) => <PendingDOCard key={order.pendingDoid ?? i} order={order} index={i} onEdit={openEditDO} onDelete={setDeleteDOItem} />)}
                             </>
                         )}
                     </>

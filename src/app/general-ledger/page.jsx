@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
 import AppLayout from '../../components/layout/AppLayout';
+import { downloadPdf } from '../../lib/downloadPdf';
 import { useLazyGetMyLedgerReportQuery } from '../../services/generalLedgerApi';
 import { useLazyGetMyAccountAddressQuery } from '../../services/accountMasterApi';
 import { formatReadableAmount } from '../../lib/convertNumberToWord';
@@ -184,7 +185,7 @@ async function generateLedgerPDF({ filteredData, totals, fromDate, toDate, addre
     doc.setTextColor(0, 0, 0);
     const totalPages = doc.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) { doc.setPage(p); drawFooter(p, totalPages, p === totalPages); }
-    doc.save(`Ledger_${fromDate}_to_${toDate}.pdf`);
+    await downloadPdf(doc, `Ledger_${fromDate}_to_${toDate}.pdf`);
 }
 
 const VOUCHER_TYPES = [

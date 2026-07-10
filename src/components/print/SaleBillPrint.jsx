@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useLazyGetSaleBillDetailQuery } from '../../services/customerSaleBillPrintApi';
 import { ConvertNumberToWord, formatReadableAmount } from '../../lib/convertNumberToWord';
+import { downloadPdf } from '../../lib/downloadPdf';
 
 const CompanyNameUpdatedDate = '2025-07-10';
 const newCompanyName = 'JK Sugars And Commodities Pvt. Ltd.';
@@ -346,7 +347,7 @@ export default function SaleBillPrint({ saleid, label = 'Print' }) {
             const docNo = `SB${d.year || ''}-${d.doc_no || ''}`;
             const truck = d.LORRYNO ? `_${String(d.LORRYNO).trim()}` : '';
             const buyer = d.billtoname ? `_${String(d.billtoname).trim().toUpperCase()}` : '';
-            pdf.save(`SaleBill_${docNo}${truck}${buyer}.pdf`);
+            await downloadPdf(pdf, `SaleBill_${docNo}${truck}${buyer}.pdf`);
         } catch (err) {
             console.error('Sale bill print error:', err);
             alert('Failed to generate bill PDF');

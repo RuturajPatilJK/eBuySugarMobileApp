@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useLazyGetMyAccountAddressQuery } from '../../services/accountMasterApi';
 import { formatReadableAmount } from '../../lib/convertNumberToWord';
+import { downloadPdf } from '../../lib/downloadPdf';
 
 const COMPANY_CODE = parseInt(process.env.NEXT_PUBLIC_COMPANY_CODE || '4');
 const CompanyNameUpdatedDate = '2025-07-10';
@@ -200,7 +201,7 @@ export default function GeneralLedgerPrint({ rows, fromDate, toDate, totals }) {
         try {
             await getAddress(COMPANY_CODE);
             const doc = await generateLedgerPDF({ rows, fromDate, toDate, totals });
-            doc.save(`Ledger_${fromDate}_to_${toDate}.pdf`);
+            await downloadPdf(doc, `Ledger_${fromDate}_to_${toDate}.pdf`);
         } catch (err) {
             console.error('Ledger PDF error:', err);
             alert('Failed to generate ledger PDF');

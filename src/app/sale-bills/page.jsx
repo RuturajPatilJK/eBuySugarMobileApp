@@ -114,9 +114,7 @@ export default function SaleBillsPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={resetFilter} className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-                            <RotateCcw size={14} strokeWidth={2.2} />
-                        </button>
+                     
                         <button onClick={() => setShowFilter(v => !v)}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all"
                             style={{ background: showFilter ? '#ef3837' : 'white', border: `1.5px solid ${showFilter ? '#ef3837' : '#e5e7eb'}`, color: showFilter ? 'white' : '#374151' }}>

@@ -7,6 +7,25 @@ import {
     SlidersHorizontal, RotateCcw, Search, X,
     ChevronDown, Pencil, Trash2, Plus, TrendingUp,
 } from 'lucide-react';
+
+function EditIcon({ size = 14, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+    );
+}
+function TrashIcon({ size = 14, color = 'currentColor' }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M9 6V4h6v2" />
+        </svg>
+    );
+}
 import AppLayout from '../../components/layout/AppLayout';
 import { useGetMyesalesaudaQuery, myesalesaudaApi } from '../../services/myesalesaudaApi';
 import { useUpdateTenderRatesAndQuantalMutation, useDeleteTenderMutation } from '../../services/tenderApi';
@@ -429,83 +448,79 @@ export default function MyESalesPage() {
                                     className="bg-white rounded-2xl overflow-hidden"
                                     style={{
                                         borderLeft: `4px solid ${accent}`,
-                                        border: `1px solid #f1f0f5`,
-                                        borderLeftWidth: 4,
-                                        borderLeftColor: accent,
-                                        boxShadow: '0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
+                                        boxShadow: '0 2px 16px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04)',
                                     }}>
 
-                                    {/* ── Card header — gradient tint + info ── */}
-                                    <div className="px-4 pt-4 pb-3"
+                                    {/* ── Card header — gradient tint ── */}
+                                    <div className="px-4 pt-4 pb-3.5"
                                         style={{ background: `linear-gradient(135deg, ${accent}10 0%, ${accent}04 60%, transparent 100%)` }}>
 
-                                        {/* Name + Status badge row */}
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className="flex-1 min-w-0 mr-3">
-                                                <p className="font-black text-[15px] text-gray-900 leading-tight truncate">
-                                                    {item.Ac_Name_E || item.Short_Name || 'Mill'}
-                                                </p>
-                                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                                    {[item.gradeName, item.Packing ? `${item.Packing}kg` : null, item.season].filter(Boolean).map((t, j) => (
-                                                        <span key={j} className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                                                            style={{ background: `${accent}15`, color: accent }}>
-                                                            {t}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                        {/* Mill name row */}
+                                        <div className="flex items-start justify-between mb-2">
+                                            <p className="font-black text-[15px] text-gray-900 leading-snug flex-1 mr-3">
+                                                {item.Ac_Name_E || item.Short_Name || 'Mill'}
+                                            </p>
                                             <StatusBadge item={item} />
+                                        </div>
+
+                                        {/* Tags row — grade, packing, season, tender no */}
+                                        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                                            {[item.gradeName, item.Packing ? `${item.Packing}kg` : null, item.season].filter(Boolean).map((t, j) => (
+                                                <span key={j} className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+                                                    style={{ background: `${accent}15`, color: accent }}>
+                                                    {t}
+                                                </span>
+                                            ))}
+                                            {item.Tender_No && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-gray-100 text-gray-500">
+                                                    #{item.Tender_No}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* ── 3-column quantity stats ── */}
                                         <div className="grid grid-cols-3 gap-2">
                                             {[
-                                                { label: 'Display Qty', value: fmtNum(qty),   color: accent,     bg: `${accent}12` },
-                                                { label: 'Available',   value: fmtNum(avail), color: '#16a34a',  bg: '#f0fdf4' },
-                                                { label: 'Sold',        value: fmtNum(sold),  color: '#d97706',  bg: '#fffbeb' },
+                                                { label: 'Display Qty', value: fmtNum(qty),   color: accent,    bg: `${accent}12` },
+                                                { label: 'Available',   value: fmtNum(avail), color: '#16a34a', bg: '#f0fdf4' },
+                                                { label: 'Sold',        value: fmtNum(sold),  color: '#d97706', bg: '#fffbeb' },
                                             ].map(({ label, value, color, bg }) => (
-                                                <div key={label} className="rounded-xl py-2.5 px-2 text-center" style={{ background: bg }}>
-                                                    <p className="text-[15px] font-black leading-none mb-0.5" style={{ color }}>{value}</p>
+                                                <div key={label} className="rounded-xl py-3 px-2 text-center" style={{ background: bg }}>
+                                                    <p className="text-[16px] font-black leading-none mb-0.5" style={{ color }}>{value}</p>
                                                     <p className="text-[8px] font-extrabold text-gray-400 uppercase tracking-wider">Qtl</p>
-                                                    <p className="text-[9px] text-gray-400 font-medium mt-0.5 leading-tight">{label}</p>
+                                                    <p className="text-[9px] text-gray-500 font-semibold mt-0.5 leading-tight">{label}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
 
-                                    {/* ── Footer: Rate + Edit/Delete + Expand ── */}
-                                    <div className="px-4 py-2.5 border-t flex items-center justify-between" style={{ borderColor: `${accent}20` }}>
+                                    {/* ── Footer: Rate + Icon buttons ── */}
+                                    <div className="px-4 py-2.5 flex items-center justify-between"
+                                        style={{ borderTop: `1px solid ${accent}18` }}>
                                         <div>
                                             <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-0.5">Sale Rate</p>
-                                            <p className="font-black text-[15px] leading-none" style={{ color: accent }}>
+                                            <p className="font-black text-[16px] leading-none" style={{ color: accent }}>
                                                 ₹{fmtAmt(rate)}
                                                 <span className="text-[10px] font-semibold text-gray-400 ml-1">/qtl</span>
                                             </p>
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {/* Edit pill button */}
-                                            <motion.button whileTap={{ scale: 0.93 }}
-                                                onClick={() => openEdit(item)}
-                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl"
-                                                style={{ background: '#f5f3ff', border: '1.5px solid #c4b5fd' }}>
-                                                <Pencil size={12} style={{ color: '#7c3aed' }} strokeWidth={2.5} />
-                                                <span className="text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>Edit</span>
+                                            {/* Edit — 34×34 icon-only (same SVG as Edit Profile contacts) */}
+                                            <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEdit(item)}
+                                                style={{ width: 34, height: 34, border: 'none', borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                <EditIcon size={14} color="#2563eb" />
                                             </motion.button>
-                                            {/* Delete pill button */}
-                                            <motion.button whileTap={{ scale: 0.93 }}
-                                                onClick={() => setDeleteItem(item)}
-                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl"
-                                                style={{ background: '#fff1f0', border: '1.5px solid #fecaca' }}>
-                                                <Trash2 size={12} style={{ color: '#ef4444' }} strokeWidth={2.5} />
-                                                <span className="text-[11px] font-extrabold" style={{ color: '#ef4444' }}>Delete</span>
+                                            {/* Delete — 34×34 icon-only (same SVG as Edit Profile contacts) */}
+                                            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setDeleteItem(item)}
+                                                style={{ width: 34, height: 34, border: 'none', borderRadius: 10, background: '#fff5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                <TrashIcon size={14} color="#ef3837" />
                                             </motion.button>
-                                            {/* Expand toggle */}
+                                            {/* Expand toggle — 34×34 */}
                                             <button onClick={() => setExpanded(isOpen ? null : id)}
-                                                className="w-8 h-8 rounded-xl flex items-center justify-center border"
-                                                style={{ background: isOpen ? `${accent}15` : '#f9fafb', borderColor: isOpen ? `${accent}40` : '#e5e7eb' }}>
+                                                style={{ width: 34, height: 34, border: 'none', borderRadius: 10, background: isOpen ? `${accent}18` : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                                 <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                                                    <ChevronDown size={14} style={{ color: isOpen ? accent : '#9ca3af' }} />
+                                                    <ChevronDown size={15} color={isOpen ? accent : '#9ca3af'} />
                                                 </motion.div>
                                             </button>
                                         </div>

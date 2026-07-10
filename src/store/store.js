@@ -21,6 +21,7 @@ import { grievanceApi }           from '../services/grievanceApi';
 import { todaysSaleApi }          from '../services/todaysSaleApi';
 import { analyticsApi }           from '../services/analyticsApi';
 import { customerSaleBillPrintApi } from '../services/customerSaleBillPrintApi';
+import { pushApi }                from '../services/pushApi';
 
 const PRIMARY_WS_URL  = process.env.NEXT_PUBLIC_WS_URL        || 'ws://localhost:8000/ws';
 const SOCKET_IO_URL   = process.env.NEXT_PUBLIC_SOCKET_IO_URL || 'http://localhost:8080';
@@ -44,6 +45,7 @@ export const store = configureStore({
         [todaysSaleApi.reducerPath]:          todaysSaleApi.reducer,
         [analyticsApi.reducerPath]:           analyticsApi.reducer,
         [customerSaleBillPrintApi.reducerPath]: customerSaleBillPrintApi.reducer,
+        [pushApi.reducerPath]:                pushApi.reducer,
         auth:                                 authReducer,
     },
     middleware: (getDefaultMiddleware) =>
@@ -66,5 +68,6 @@ export const store = configureStore({
             .concat(grievanceApi.middleware)
             .concat(todaysSaleApi.middleware)
             .concat(analyticsApi.middleware)
-            .concat(customerSaleBillPrintApi.middleware),
+            .concat(customerSaleBillPrintApi.middleware)
+            .concat(pushApi.middleware),
 });

@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useGetMeQuery } from '../../services/authApi';
 import MobileHeader from './MobileHeader';
 import BottomNav from './BottomNav';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 const PAGE_TITLES = {
     '/dashboard':         'Dashboard',
@@ -33,6 +34,9 @@ export default function AppLayout({ children, title, showBack }) {
     const router = useRouter();
     const pathname = usePathname();
     const { data: user, isLoading, isFetching, isError } = useGetMeQuery();
+
+    /* Register push subscription once the user is authenticated */
+    usePushNotifications(!!user);
 
     useEffect(() => {
         if (!isLoading && !isFetching && isError) {

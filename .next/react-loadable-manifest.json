@@ -1,8 +1,110 @@
 {
+  "..\\node_modules\\@capacitor\\filesystem\\dist\\esm\\index.js -> ./web": {
+    "id": "..\\node_modules\\@capacitor\\filesystem\\dist\\esm\\index.js -> ./web",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_capacitor_filesystem_dist_esm_web_js.js"
+    ]
+  },
+  "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> canvg": {
+    "id": "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> canvg",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_canvg_lib_index_es_js.js"
+    ]
+  },
+  "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> dompurify": {
+    "id": "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> dompurify",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_dompurify_dist_purify_es_mjs.js"
+    ]
+  },
+  "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> html2canvas": {
+    "id": "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> html2canvas",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_html2canvas_dist_html2canvas_js.js"
+    ]
+  },
   "..\\node_modules\\next\\dist\\client\\components\\react-dev-overlay\\utils\\use-websocket.js -> @vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts": {
     "id": "..\\node_modules\\next\\dist\\client\\components\\react-dev-overlay\\utils\\use-websocket.js -> @vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts",
     "files": [
       "static/chunks/_app-pages-browser_node_modules_next_dist_client_dev_noop-turbopack-hmr_js.js"
+    ]
+  },
+  "app\\general-ledger\\page.jsx -> ../../lib/fonts/Signika-Bold-normal": {
+    "id": "app\\general-ledger\\page.jsx -> ../../lib/fonts/Signika-Bold-normal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_fonts_Signika-Bold-normal_js.js"
+    ]
+  },
+  "app\\general-ledger\\page.jsx -> ../../lib/fonts/Signika-Medium-normal": {
+    "id": "app\\general-ledger\\page.jsx -> ../../lib/fonts/Signika-Medium-normal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_fonts_Signika-Medium-normal_js.js"
+    ]
+  },
+  "app\\general-ledger\\page.jsx -> ../../lib/fonts/Signika-Regular-normal": {
+    "id": "app\\general-ledger\\page.jsx -> ../../lib/fonts/Signika-Regular-normal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_fonts_Signika-Regular-normal_js.js"
+    ]
+  },
+  "app\\general-ledger\\page.jsx -> jspdf": {
+    "id": "app\\general-ledger\\page.jsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
+  "app\\general-ledger\\page.jsx -> jspdf-autotable": {
+    "id": "app\\general-ledger\\page.jsx -> jspdf-autotable",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf-autotable_dist_jspdf_plugin_autotable_mjs.js"
+    ]
+  },
+  "components\\print\\SaleBillPrint.jsx -> ../../lib/fonts/Signika-Bold-normal": {
+    "id": "components\\print\\SaleBillPrint.jsx -> ../../lib/fonts/Signika-Bold-normal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_fonts_Signika-Bold-normal_js.js"
+    ]
+  },
+  "components\\print\\SaleBillPrint.jsx -> ../../lib/fonts/Signika-Medium-normal": {
+    "id": "components\\print\\SaleBillPrint.jsx -> ../../lib/fonts/Signika-Medium-normal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_fonts_Signika-Medium-normal_js.js"
+    ]
+  },
+  "components\\print\\SaleBillPrint.jsx -> ../../lib/fonts/Signika-Regular-normal": {
+    "id": "components\\print\\SaleBillPrint.jsx -> ../../lib/fonts/Signika-Regular-normal",
+    "files": [
+      "static/chunks/_app-pages-browser_src_lib_fonts_Signika-Regular-normal_js.js"
+    ]
+  },
+  "components\\print\\SaleBillPrint.jsx -> jspdf": {
+    "id": "components\\print\\SaleBillPrint.jsx -> jspdf",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
+    ]
+  },
+  "components\\print\\SaleBillPrint.jsx -> jspdf-autotable": {
+    "id": "components\\print\\SaleBillPrint.jsx -> jspdf-autotable",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_jspdf-autotable_dist_jspdf_plugin_autotable_mjs.js"
+    ]
+  },
+  "components\\print\\SaleBillPrint.jsx -> qrcode": {
+    "id": "components\\print\\SaleBillPrint.jsx -> qrcode",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_qrcode_lib_browser_js.js"
+    ]
+  },
+  "lib\\downloadPdf.js -> @capacitor/core": {
+    "id": "lib\\downloadPdf.js -> @capacitor/core",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_capacitor_core_dist_index_js.js"
+    ]
+  },
+  "lib\\downloadPdf.js -> @capacitor/filesystem": {
+    "id": "lib\\downloadPdf.js -> @capacitor/filesystem",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_capacitor_filesystem_dist_esm_index_js.js"
     ]
   },
   "store\\listenerMiddleware.js -> ../services/availableOneBuysugarApi": {

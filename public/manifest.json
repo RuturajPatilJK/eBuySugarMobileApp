@@ -8,5 +8,19 @@
   "theme_color": "#ef3837",
   "orientation": "portrait",
   "categories": ["business", "finance"],
-  "lang": "en-IN"
+  "lang": "en-IN",
+  "icons": [
+    {
+      "src": "/eBuySugarlogo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/eBuySugarlogo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
 }

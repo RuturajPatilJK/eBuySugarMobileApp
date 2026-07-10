@@ -18,7 +18,7 @@ export default nextConfig;
 // /** @type {import('next').NextConfig} */
 // const nextConfig = {
 //   reactStrictMode: true,
-//   allowedDevOrigins: ['http://192.168.1.49:3001', 'http://192.168.1.49'],
+//   allowedDevOrigins: ['http://192.168.1.50:3001', 'http://192.168.1.50'],
 // };
 
 // export default nextConfig;
